@@ -26,25 +26,70 @@ body {
 
 .header h1 {
     font-size: 24px;
-    margin-bottom: 10px;
+    margin-bottom: 15px;
 }
 
-.url-config {
+.config-section {
+    background-color: rgba(255, 255, 255, 0.1);
+    padding: 15px;
+    border-radius: 8px;
+    margin-top: 10px;
+}
+
+.config-row {
     display: flex;
-    gap: 10px;
-    align-items: center;
+    gap: 15px;
+    align-items: end;
+    margin-bottom: 15px;
+    flex-wrap: wrap;
 }
 
-#urlInput {
-    flex: 1;
+.config-group {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    min-width: 150px;
+}
+
+.config-group label {
+    font-size: 12px;
+    font-weight: bold;
+    color: #ecf0f1;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.config-group input,
+.config-group select {
     padding: 8px 12px;
     border: none;
     border-radius: 4px;
     font-size: 14px;
+    background-color: white;
+    border: 2px solid transparent;
+    transition: border-color 0.3s;
 }
 
-#loadBtn, #refreshBtn {
-    padding: 8px 16px;
+.config-group input:focus,
+.config-group select:focus {
+    outline: none;
+    border-color: #3498db;
+}
+
+#ipInput {
+    flex: 1;
+    min-width: 200px;
+}
+
+.button-group {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    align-items: center;
+}
+
+.button-group button {
+    padding: 10px 16px;
     background-color: #3498db;
     color: white;
     border: none;
@@ -52,9 +97,10 @@ body {
     cursor: pointer;
     font-size: 14px;
     transition: background-color 0.3s;
+    white-space: nowrap;
 }
 
-#loadBtn:hover, #refreshBtn:hover {
+.button-group button:hover {
     background-color: #2980b9;
 }
 
@@ -66,19 +112,159 @@ body {
     background-color: #229954;
 }
 
+#savePresetBtn {
+    background-color: #f39c12;
+}
+
+#savePresetBtn:hover {
+    background-color: #e67e22;
+}
+
+#deletePresetBtn {
+    background-color: #e74c3c;
+}
+
+#deletePresetBtn:hover {
+    background-color: #c0392b;
+}
+
 .content {
     flex: 1;
     position: relative;
     background-color: white;
 }
 
-.website-frame {
-    width: 100%;
-    height: 100%;
-    border: none;
+.status-bar {
+    background-color: #34495e;
+    color: white;
+    padding: 8px 15px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 12px;
+    border-bottom: 1px solid #2c3e50;
 }
 
-.error-message, .loading-message {
+.status-left {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.zoom-controls {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.zoom-btn {
+    background-color: #2c3e50;
+    color: white;
+    border: 1px solid #34495e;
+    border-radius: 3px;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: bold;
+    transition: background-color 0.2s;
+}
+
+.zoom-btn:hover {
+    background-color: #3498db;
+}
+
+.zoom-btn:active {
+    background-color: #2980b9;
+}
+
+.zoom-level {
+    font-weight: bold;
+    min-width: 40px;
+    text-align: center;
+    font-size: 11px;
+}
+
+.connection-status {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.status-indicator {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    display: inline-block;
+}
+
+.connection-status.disconnected .status-indicator {
+    background-color: #e74c3c;
+}
+
+.connection-status.connecting .status-indicator {
+    background-color: #f39c12;
+    animation: pulse 1s infinite;
+}
+
+.connection-status.connected .status-indicator {
+    background-color: #27ae60;
+}
+
+.connection-status.error .status-indicator {
+    background-color: #e74c3c;
+    animation: blink 0.5s infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+}
+
+@keyframes blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.3; }
+}
+
+.load-time {
+    font-weight: bold;
+    color: #ecf0f1;
+}
+
+.iframe-container {
+    width: 100%;
+    height: calc(100% - 33px);
+    overflow: auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: #f5f5f5;
+    position: relative;
+}
+
+.iframe-container.fullscreen {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    z-index: 1000;
+    background-color: #000;
+}
+
+.website-frame {
+    border: none;
+    display: block;
+    transform-origin: center center;
+    transition: transform 0.3s ease;
+    background-color: white;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.error-message, .loading-message, .success-message {
     position: absolute;
     top: 50%;
     left: 50%;
@@ -87,6 +273,8 @@ body {
     border-radius: 8px;
     text-align: center;
     z-index: 10;
+    max-width: 400px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
 }
 
 .error-message {
@@ -96,6 +284,11 @@ body {
 
 .loading-message {
     background-color: #3498db;
+    color: white;
+}
+
+.success-message {
+    background-color: #27ae60;
     color: white;
 }
 
@@ -113,16 +306,42 @@ body {
         margin-bottom: 8px;
     }
     
-    .url-config {
+    .config-section {
+        padding: 10px;
+    }
+    
+    .config-row {
+        flex-direction: column;
+        gap: 10px;
+        align-items: stretch;
+    }
+    
+    .config-group {
+        min-width: auto;
+        width: 100%;
+    }
+    
+    .button-group {
+        flex-direction: column;
+    }
+    
+    .button-group button {
+        width: 100%;
+    }
+    
+    .status-bar {
         flex-direction: column;
         gap: 8px;
+        align-items: stretch;
     }
     
-    #urlInput {
-        width: 100%;
+    .zoom-controls {
+        justify-content: center;
     }
     
-    .url-config button {
-        width: 100%;
+    .zoom-btn {
+        width: 32px;
+        height: 32px;
+        font-size: 14px;
     }
 }

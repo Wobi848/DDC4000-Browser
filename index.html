@@ -10,21 +10,88 @@
     <div class="container">
         <header class="header">
             <h1>DDC4000 Browser</h1>
-            <div class="url-config">
-                <input type="text" id="urlInput" placeholder="Enter DDC4000 URL (e.g., 192.168.10.21/ddcdialog.html?useOvl=1&type=WVGA)" value="">
-                <button id="loadBtn">Load</button>
-                <button id="refreshBtn">Refresh</button>
+            
+            <div class="config-section">
+                <div class="config-row">
+                    <div class="config-group">
+                        <label for="protocolSelect">Protocol:</label>
+                        <select id="protocolSelect">
+                            <option value="http">HTTP</option>
+                            <option value="https">HTTPS</option>
+                        </select>
+                    </div>
+                    
+                    <div class="config-group">
+                        <label for="ipInput">IP Address:</label>
+                        <input type="text" id="ipInput" placeholder="192.168.10.21" list="ipSuggestions">
+                        <datalist id="ipSuggestions"></datalist>
+                    </div>
+                    
+                    <div class="config-group">
+                        <label for="resolutionSelect">Resolution:</label>
+                        <select id="resolutionSelect">
+                            <option value="QVGA">QVGA (320×240)</option>
+                            <option value="WVGA" selected>WVGA (800×480)</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="config-row">
+                    <div class="config-group">
+                        <label for="presetSelect">Saved Configurations:</label>
+                        <select id="presetSelect">
+                            <option value="">Select a preset...</option>
+                        </select>
+                    </div>
+                    
+                    <div class="config-group">
+                        <label for="presetName">Save as:</label>
+                        <input type="text" id="presetName" placeholder="Enter preset name">
+                    </div>
+                </div>
+                
+                <div class="button-group">
+                    <button id="loadBtn">Load DDC Interface</button>
+                    <button id="refreshBtn">Refresh</button>
+                    <button id="savePresetBtn">Save Preset</button>
+                    <button id="deletePresetBtn">Delete Preset</button>
+                </div>
             </div>
         </header>
         
         <main class="content">
+            <div id="statusBar" class="status-bar">
+                <div class="status-left">
+                    <div id="connectionStatus" class="connection-status disconnected">
+                        <span class="status-indicator"></span>
+                        <span id="statusText">Not Connected</span>
+                    </div>
+                    <div id="loadTime" class="load-time hidden"></div>
+                </div>
+                
+                <div class="zoom-controls">
+                    <button id="zoomOutBtn" class="zoom-btn" title="Zoom Out">−</button>
+                    <span id="zoomLevel" class="zoom-level">100%</span>
+                    <button id="zoomInBtn" class="zoom-btn" title="Zoom In">+</button>
+                    <button id="autoFitBtn" class="zoom-btn" title="Auto Fit">⏏</button>
+                    <button id="fullscreenBtn" class="zoom-btn" title="Fullscreen">⛶</button>
+                    <button id="resetZoomBtn" class="zoom-btn" title="Reset Zoom">⌂</button>
+                </div>
+            </div>
+            
             <div id="errorMessage" class="error-message hidden">
                 Failed to load the DDC4000 interface. Please check the URL and try again.
             </div>
             <div id="loadingMessage" class="loading-message hidden">
                 Loading DDC4000 Interface...
             </div>
-            <iframe id="websiteFrame" class="website-frame" src="" frameborder="0"></iframe>
+            <div id="successMessage" class="success-message hidden">
+                DDC4000 Interface Loaded Successfully!
+            </div>
+            
+            <div class="iframe-container" id="iframeContainer">
+                <iframe id="websiteFrame" class="website-frame" src="" frameborder="0"></iframe>
+            </div>
         </main>
     </div>
     
