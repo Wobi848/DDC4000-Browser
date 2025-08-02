@@ -84,6 +84,34 @@ self.addEventListener('fetch', (event) => {
     return;
   }
   
+  // Handle screenshot proxy requests
+  if (requestUrl.pathname.startsWith('/proxy-screenshot')) {
+    const targetUrl = requestUrl.searchParams.get('url');
+    if (targetUrl) {
+      event.respondWith(
+        fetch(targetUrl, {
+          mode: 'no-cors',
+          credentials: 'omit'
+        }).then(response => {
+          // Create a new response with CORS headers
+          const newResponse = new Response(response.body, {
+            status: response.status,
+            statusText: response.statusText,
+            headers: {
+              'Access-Control-Allow-Origin': '*',
+              'Access-Control-Allow-Methods': 'GET',
+              'Content-Type': response.headers.get('Content-Type') || 'application/octet-stream'
+            }
+          });
+          return newResponse;
+        }).catch(() => {
+          return new Response('Proxy fetch failed', { status: 500 });
+        })
+      );
+      return;
+    }
+  }
+  
   // Handle DDC4000 device requests (pass through, don't cache)
   if (requestUrl.hostname.match(/^\d+\.\d+\.\d+\.\d+$/) || 
       requestUrl.pathname.includes('ddcdialog.html') ||
