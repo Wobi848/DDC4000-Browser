@@ -3,7 +3,27 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Professional DDC4000 building automation interface browser with screenshot capabilities">
+    <meta name="theme-color" content="#3498db">
     <title>DDC4000 Browser</title>
+    
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="manifest.json">
+    
+    <!-- Icons -->
+    <link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="assets/favicon-16x16.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="assets/apple-touch-icon.png">
+    
+    <!-- iOS Meta Tags -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="DDC4000 Browser">
+    
+    <!-- Windows Metro -->
+    <meta name="msapplication-TileColor" content="#2c3e50">
+    <meta name="msapplication-config" content="browserconfig.xml">
+    
     <link rel="stylesheet" href="src/styles.css">
 </head>
 <body>
@@ -69,13 +89,21 @@
                     <div id="loadTime" class="load-time hidden"></div>
                 </div>
                 
-                <div class="zoom-controls">
-                    <button id="zoomOutBtn" class="zoom-btn" title="Zoom Out">−</button>
-                    <span id="zoomLevel" class="zoom-level">100%</span>
-                    <button id="zoomInBtn" class="zoom-btn" title="Zoom In">+</button>
-                    <button id="autoFitBtn" class="zoom-btn" title="Auto Fit">⏏</button>
-                    <button id="fullscreenBtn" class="zoom-btn" title="Fullscreen">⛶</button>
-                    <button id="resetZoomBtn" class="zoom-btn" title="Reset Zoom">⌂</button>
+                <div class="controls-section">
+                    <div class="zoom-controls">
+                        <button id="zoomOutBtn" class="zoom-btn" title="Zoom Out">−</button>
+                        <span id="zoomLevel" class="zoom-level">100%</span>
+                        <button id="zoomInBtn" class="zoom-btn" title="Zoom In">+</button>
+                        <button id="autoFitBtn" class="zoom-btn" title="Auto Fit">⏏</button>
+                        <button id="fullscreenBtn" class="zoom-btn" title="Fullscreen">⛶</button>
+                        <button id="resetZoomBtn" class="zoom-btn" title="Reset Zoom">⌂</button>
+                    </div>
+                    
+                    <div class="capture-controls">
+                        <button id="captureBtn" class="capture-btn" title="Take Screenshot">📷</button>
+                        <button id="galleryBtn" class="capture-btn" title="Screenshot Gallery">🖼️</button>
+                        <button id="autoCapture" class="capture-btn toggle" title="Auto Capture">🔄</button>
+                    </div>
                 </div>
             </div>
             
@@ -93,6 +121,28 @@
                 <iframe id="websiteFrame" class="website-frame" src="" frameborder="0"></iframe>
             </div>
         </main>
+        
+        <!-- Screenshot Gallery Modal -->
+        <div id="galleryModal" class="modal hidden" style="display: none;">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2>Screenshot Gallery</h2>
+                    <div class="modal-actions">
+                        <button id="clearGalleryBtn" class="btn-secondary">Clear All</button>
+                        <button id="exportGalleryBtn" class="btn-secondary">Export All</button>
+                        <button id="closeGalleryBtn" class="btn-close">×</button>
+                    </div>
+                </div>
+                
+                <div class="modal-body">
+                    <div id="galleryGrid" class="gallery-grid">
+                        <div class="gallery-empty">
+                            <p>No screenshots yet. Click 📷 to capture your first screenshot!</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
     
     <script src="src/script.js"></script>
