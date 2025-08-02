@@ -29,9 +29,12 @@
 <body>
     <div class="container">
         <header class="header">
-            <h1>DDC4000 Browser</h1>
+            <div class="header-top">
+                <h1>DDC4000 Browser</h1>
+                <button id="toggleConfigBtn" class="toggle-config-btn" title="Toggle Settings">⚙️</button>
+            </div>
             
-            <div class="config-section">
+            <div class="config-section" id="configSection">
                 <div class="config-row">
                     <div class="config-group">
                         <label for="protocolSelect">Protocol:</label>
@@ -140,6 +143,29 @@
                             <p>No screenshots yet. Click 📷 to capture your first screenshot!</p>
                         </div>
                     </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Image Inspector Modal -->
+        <div id="imageInspector" class="modal hidden" style="display: none;">
+            <div class="inspector-content">
+                <div class="inspector-header">
+                    <div class="inspector-info">
+                        <span id="inspectorTitle">Screenshot Details</span>
+                        <span id="inspectorTimestamp"></span>
+                    </div>
+                    <div class="inspector-controls">
+                        <button id="inspectorZoomOut" class="inspector-btn" title="Zoom Out">−</button>
+                        <span id="inspectorZoomLevel">100%</span>
+                        <button id="inspectorZoomIn" class="inspector-btn" title="Zoom In">+</button>
+                        <button id="inspectorFit" class="inspector-btn" title="Fit to Screen">⏏</button>
+                        <button id="inspectorDownload" class="inspector-btn" title="Download">💾</button>
+                        <button id="closeInspector" class="inspector-btn close" title="Close">×</button>
+                    </div>
+                </div>
+                <div class="inspector-body">
+                    <img id="inspectorImage" class="inspector-image" src="" alt="Screenshot">
                 </div>
             </div>
         </div>
