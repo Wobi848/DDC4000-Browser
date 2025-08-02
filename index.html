@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DDC4000 Browser</title>
+    <link rel="stylesheet" href="src/styles.css">
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <h1>DDC4000 Browser</h1>
+            <div class="url-config">
+                <input type="text" id="urlInput" placeholder="Enter DDC4000 URL (e.g., 192.168.10.21/ddcdialog.html?useOvl=1&type=WVGA)" value="">
+                <button id="loadBtn">Load</button>
+                <button id="refreshBtn">Refresh</button>
+            </div>
+        </header>
+        
+        <main class="content">
+            <div id="errorMessage" class="error-message hidden">
+                Failed to load the DDC4000 interface. Please check the URL and try again.
+            </div>
+            <div id="loadingMessage" class="loading-message hidden">
+                Loading DDC4000 Interface...
+            </div>
+            <iframe id="websiteFrame" class="website-frame" src="" frameborder="0"></iframe>
+        </main>
+    </div>
+    
+    <script src="src/script.js"></script>
+</body>
+</html>

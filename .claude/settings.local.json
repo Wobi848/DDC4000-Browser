@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "WebFetch(domain:95.81.36.9)",
+      "WebFetch(domain:192.168.10.21)",
+      "Bash(mkdir:*)",
+      "Bash(move:*)",
+      "Bash(mv:*)"
+    ],
+    "deny": []
+  }
+}
