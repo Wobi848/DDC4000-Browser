@@ -12,32 +12,28 @@
   "lang": "en",
   "icons": [
     {
-      "src": "assets/icon-192.png",
+      "src": "icon-192.png",
       "sizes": "192x192",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
     },
     {
-      "src": "assets/icon-512.png", 
+      "src": "assets/Icons/txt/web/icon-192-maskable.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "icon-512.png", 
       "sizes": "512x512",
       "type": "image/png",
-      "purpose": "any maskable"
-    }
-  ],
-  "screenshots": [
-    {
-      "src": "assets/screenshot-desktop.png",
-      "sizes": "1920x1080",
-      "type": "image/png",
-      "form_factor": "wide",
-      "label": "DDC4000 Browser on desktop"
+      "purpose": "any"
     },
     {
-      "src": "assets/screenshot-mobile.png", 
-      "sizes": "390x844",
+      "src": "assets/Icons/txt/web/icon-512-maskable.png",
+      "sizes": "512x512",
       "type": "image/png",
-      "form_factor": "narrow",
-      "label": "DDC4000 Browser on mobile"
+      "purpose": "maskable"
     }
   ],
   "features": [
@@ -50,25 +46,13 @@
       "name": "Take Screenshot",
       "short_name": "Screenshot",
       "description": "Capture current DDC interface",
-      "url": "/index.html?action=screenshot",
-      "icons": [
-        {
-          "src": "assets/icon-screenshot.png",
-          "sizes": "96x96"
-        }
-      ]
+      "url": "/index.html?action=screenshot"
     },
     {
       "name": "Screenshot Gallery",
       "short_name": "Gallery", 
       "description": "View screenshot history",
-      "url": "/index.html?action=gallery",
-      "icons": [
-        {
-          "src": "assets/icon-gallery.png",
-          "sizes": "96x96"
-        }
-      ]
+      "url": "/index.html?action=gallery"
     }
   ]
 }

@@ -11,7 +11,8 @@
       "Bash(rg:*)",
       "Bash(cp:*)",
       "Bash(rm:*)",
-      "Bash(grep:*)"
+      "Bash(grep:*)",
+      "Bash(copy:*)"
     ],
     "deny": []
   }

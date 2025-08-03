@@ -1,10 +1,18 @@
-const CACHE_NAME = 'ddc4000-browser-v1.0.0';
+const CACHE_NAME = 'ddc4000-browser-v1.1.0';
 const STATIC_CACHE_URLS = [
   '/',
   '/index.html',
-  '/src/script.js',
+  '/src/main.js',
+  '/src/modules/screenshot.js',
+  '/src/modules/gallery.js',
+  '/src/modules/presets.js',
+  '/src/modules/zoom.js',
   '/src/styles.css',
-  '/manifest.json'
+  '/manifest.json',
+  '/icon-192.png',
+  '/icon-512.png',
+  '/favicon.ico',
+  '/apple-touch-icon.png'
 ];
 
 // Install event - cache static resources
@@ -224,8 +232,8 @@ self.addEventListener('push', (event) => {
     
     const options = {
       body: data.body || 'DDC4000 Alert',
-      icon: '/assets/icon-192.png',
-      badge: '/assets/icon-96.png',
+      icon: '/icon-192.png',
+      badge: '/icon-192.png',
       tag: 'ddc4000-alert',
       requireInteraction: true,
       actions: [
