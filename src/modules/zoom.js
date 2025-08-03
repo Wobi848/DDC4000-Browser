@@ -8,7 +8,15 @@ export class ZoomManager {
 
     setZoom(zoomLevel) {
         this.currentZoom = Math.max(0.25, Math.min(5.0, zoomLevel));
-        this.ddcBrowser.websiteFrame.style.transform = `scale(${this.currentZoom})`;
+        
+        // Apply zoom with resolution-specific transform
+        const resolution = this.ddcBrowser.resolutionSelect.value;
+        if (resolution === 'QVGA') {
+            this.ddcBrowser.websiteFrame.style.transform = `scale(${this.currentZoom}) translateX(-75px)`;
+        } else {
+            this.ddcBrowser.websiteFrame.style.transform = `scale(${this.currentZoom})`;
+        }
+        
         this.updateZoomDisplay();
         this.updateFrameSize();
     }
@@ -18,13 +26,27 @@ export class ZoomManager {
     }
 
     updateFrameSize() {
-        // Always set explicit dimensions based on resolution for proper centering
+        // Set iframe dimensions and scroll position
         const resolution = this.ddcBrowser.resolutionSelect.value;
-        const baseWidth = resolution === 'QVGA' ? 320 : 800;
-        const baseHeight = resolution === 'QVGA' ? 240 : 480;
+        const baseWidth = resolution === 'QVGA' ? 700 : 800;  // Make QVGA iframe even wider
+        const baseHeight = resolution === 'QVGA' ? 480 : 480;
         
         this.ddcBrowser.websiteFrame.style.width = `${baseWidth}px`;
         this.ddcBrowser.websiteFrame.style.height = `${baseHeight}px`;
+        
+        // For QVGA, try to adjust iframe content positioning with transform
+        if (resolution === 'QVGA') {
+            // Use transform to shift content left and clip the view - fine-tuned values
+            this.ddcBrowser.websiteFrame.style.marginLeft = '0px';
+            this.ddcBrowser.websiteFrame.style.transform = `scale(${this.currentZoom}) translateX(-75px)`;
+            this.ddcBrowser.websiteFrame.style.overflow = 'hidden';
+            this.ddcBrowser.websiteFrame.style.clipPath = 'inset(0 0 0 75px)';
+        } else {
+            this.ddcBrowser.websiteFrame.style.marginLeft = '0px';
+            this.ddcBrowser.websiteFrame.style.transform = `scale(${this.currentZoom})`;
+            this.ddcBrowser.websiteFrame.style.overflow = 'auto';
+            this.ddcBrowser.websiteFrame.style.clipPath = 'none';
+        }
     }
 
     zoomIn() {
@@ -42,8 +64,8 @@ export class ZoomManager {
     autoFit() {
         // Calculate the best fit for the current screen
         const resolution = this.ddcBrowser.resolutionSelect.value;
-        const baseWidth = resolution === 'QVGA' ? 320 : 800;
-        const baseHeight = resolution === 'QVGA' ? 240 : 480;
+        const baseWidth = resolution === 'QVGA' ? 700 : 800;  // Use same dimensions as updateFrameSize
+        const baseHeight = resolution === 'QVGA' ? 480 : 480;
         
         const container = this.ddcBrowser.iframeContainer;
         // For QVGA, use less padding to give more space

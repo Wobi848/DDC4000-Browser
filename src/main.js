@@ -195,7 +195,13 @@ class DDCBrowser {
             return { valid: false, error: 'Please enter an IP address.' };
         }
 
-        const url = `${protocol}://${ip}/ddcdialog.html?useOvl=1&busyReload=1&type=${resolution}`;
+        // For QVGA, try different URL parameters to improve content positioning
+        let url;
+        if (resolution === 'QVGA') {
+            url = `${protocol}://${ip}/ddcdialog.html?useOvl=1&busyReload=1&type=${resolution}&x=0&y=0&fit=1`;
+        } else {
+            url = `${protocol}://${ip}/ddcdialog.html?useOvl=1&busyReload=1&type=${resolution}`;
+        }
         return { valid: true, url: url };
     }
 
@@ -256,7 +262,8 @@ class DDCBrowser {
         this.showLoadTime(loadTime);
         this.showSuccess('DDC4000 Interface Loaded Successfully!');
         
-        // Auto-fit the interface to screen size
+        // Update frame size and auto-fit the interface to screen size
+        this.zoomManager.updateFrameSize();
         setTimeout(() => this.zoomManager.autoFit(), 500);
         
         // Auto-capture if enabled
