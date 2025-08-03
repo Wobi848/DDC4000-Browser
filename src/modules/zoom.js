@@ -12,7 +12,7 @@ export class ZoomManager {
         // Apply zoom with resolution-specific transform
         const resolution = this.ddcBrowser.resolutionSelect.value;
         if (resolution === 'QVGA') {
-            this.ddcBrowser.websiteFrame.style.transform = `scale(${this.currentZoom}) translateX(-75px)`;
+            this.ddcBrowser.websiteFrame.style.transform = `scale(${this.currentZoom}) translateX(-85px)`;
         } else {
             this.ddcBrowser.websiteFrame.style.transform = `scale(${this.currentZoom})`;
         }
@@ -28,7 +28,7 @@ export class ZoomManager {
     updateFrameSize() {
         // Set iframe dimensions and scroll position
         const resolution = this.ddcBrowser.resolutionSelect.value;
-        const baseWidth = resolution === 'QVGA' ? 700 : 800;  // Make QVGA iframe even wider
+        const baseWidth = resolution === 'QVGA' ? 750 : 800;  // QVGA: 320 + 85 shift = 405px total needed
         const baseHeight = resolution === 'QVGA' ? 480 : 480;
         
         this.ddcBrowser.websiteFrame.style.width = `${baseWidth}px`;
@@ -38,9 +38,9 @@ export class ZoomManager {
         if (resolution === 'QVGA') {
             // Use transform to shift content left and clip the view - fine-tuned values
             this.ddcBrowser.websiteFrame.style.marginLeft = '0px';
-            this.ddcBrowser.websiteFrame.style.transform = `scale(${this.currentZoom}) translateX(-75px)`;
+            this.ddcBrowser.websiteFrame.style.transform = `scale(${this.currentZoom}) translateX(-85px)`;
             this.ddcBrowser.websiteFrame.style.overflow = 'hidden';
-            this.ddcBrowser.websiteFrame.style.clipPath = 'inset(0 0 0 75px)';
+            this.ddcBrowser.websiteFrame.style.clipPath = 'inset(0 0 0 85px)';
         } else {
             this.ddcBrowser.websiteFrame.style.marginLeft = '0px';
             this.ddcBrowser.websiteFrame.style.transform = `scale(${this.currentZoom})`;
@@ -64,7 +64,7 @@ export class ZoomManager {
     autoFit() {
         // Calculate the best fit for the current screen
         const resolution = this.ddcBrowser.resolutionSelect.value;
-        const baseWidth = resolution === 'QVGA' ? 700 : 800;  // Use same dimensions as updateFrameSize
+        const baseWidth = resolution === 'QVGA' ? 750 : 800;  // Use same dimensions as updateFrameSize
         const baseHeight = resolution === 'QVGA' ? 480 : 480;
         
         const container = this.ddcBrowser.iframeContainer;
