@@ -1,4 +1,4 @@
-const CACHE_NAME = 'ddc4000-browser-v1.3.0';
+const CACHE_NAME = 'ddc4000-browser-v1.4.0';
 const STATIC_CACHE_URLS = [
   '/',
   '/index.html',

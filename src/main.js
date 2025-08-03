@@ -5,7 +5,7 @@ import { PresetManager } from './modules/presets.js';
 import { ZoomManager } from './modules/zoom.js';
 
 // Application version
-const APP_VERSION = '1.3.0';
+const APP_VERSION = '1.4.0';
 
 class DDCBrowser {
     constructor() {
@@ -878,7 +878,7 @@ class DDCBrowser {
                             if (event.data && event.data.version) {
                                 cacheVersionEl.textContent = event.data.version;
                             } else {
-                                cacheVersionEl.textContent = 'v1.3.0-proxy';
+                                cacheVersionEl.textContent = 'v1.4.0-mobile';
                             }
                         };
                         registration.active.postMessage({ type: 'GET_VERSION' }, [messageChannel.port2]);
