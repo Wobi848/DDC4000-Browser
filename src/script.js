@@ -89,7 +89,7 @@ class DDCBrowser {
         this.resetZoomBtn.addEventListener('click', () => this.resetZoom());
         
         // Screenshot control event listeners
-        this.captureBtn.addEventListener('click', () => this.captureScreenshot());
+        this.captureBtn.addEventListener('click', () => this.showScreenshotOptions());
         this.galleryBtn.addEventListener('click', () => this.toggleGallery());
         this.autoCapture.addEventListener('click', () => this.toggleAutoCapture());
         this.closeGalleryBtn.addEventListener('click', () => this.closeGallery());
@@ -643,51 +643,1231 @@ class DDCBrowser {
         }
     }
     
-    // Screenshot functionality - Direct GIF capture
+    // Screenshot options menu
+    showScreenshotOptions() {
+        const options = [
+            {
+                text: '📷 Try Auto Capture',
+                description: 'Attempt automatic screenshot with iframe2image',
+                action: () => this.captureScreenshot()
+            },
+            {
+                text: '🌐 Open DDC in New Tab',
+                description: 'Open DDC interface in new tab for manual screenshot',
+                action: () => this.openDdcInNewTab()
+            },
+            {
+                text: '📋 Copy DDC URL',
+                description: 'Copy DDC URL to clipboard',
+                action: () => this.copyDdcUrl()
+            },
+            {
+                text: '🎯 Direct Image URL',
+                description: 'Try to open DDC image directly',
+                action: () => this.openDdcImageDirect()
+            }
+        ];
+
+        const menu = this.createOptionsMenu('Screenshot Options', options);
+        document.body.appendChild(menu);
+    }
+
+    createOptionsMenu(title, options) {
+        const overlay = document.createElement('div');
+        overlay.style.cssText = `
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.8);
+            z-index: 3000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        `;
+
+        const menu = document.createElement('div');
+        menu.style.cssText = `
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            max-width: 400px;
+            width: 90%;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+        `;
+
+        const titleEl = document.createElement('h3');
+        titleEl.textContent = title;
+        titleEl.style.cssText = 'margin: 0 0 15px 0; color: #2c3e50; text-align: center;';
+        menu.appendChild(titleEl);
+
+        options.forEach(option => {
+            const button = document.createElement('button');
+            button.style.cssText = `
+                width: 100%;
+                padding: 12px;
+                margin: 8px 0;
+                background: #f8f9fa;
+                border: 1px solid #dee2e6;
+                border-radius: 4px;
+                cursor: pointer;
+                text-align: left;
+                transition: background-color 0.2s;
+            `;
+
+            button.innerHTML = `
+                <div style="font-weight: bold; margin-bottom: 4px;">${option.text}</div>
+                <div style="font-size: 12px; color: #6c757d;">${option.description}</div>
+            `;
+
+            button.onmouseover = () => button.style.backgroundColor = '#e9ecef';
+            button.onmouseout = () => button.style.backgroundColor = '#f8f9fa';
+            
+            button.onclick = () => {
+                overlay.remove();
+                option.action();
+            };
+
+            menu.appendChild(button);
+        });
+
+        const closeBtn = document.createElement('button');
+        closeBtn.textContent = '✕ Close';
+        closeBtn.style.cssText = `
+            width: 100%;
+            padding: 8px;
+            margin-top: 10px;
+            background: #e74c3c;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        `;
+        closeBtn.onclick = () => overlay.remove();
+        menu.appendChild(closeBtn);
+
+        overlay.appendChild(menu);
+        overlay.onclick = (e) => {
+            if (e.target === overlay) overlay.remove();
+        };
+
+        return overlay;
+    }
+
+    openDdcInNewTab() {
+        const iframe = this.websiteFrame;
+        if (iframe.src) {
+            // Open DDC interface in new tab
+            const newTab = window.open(iframe.src, '_blank');
+            
+            // Show detailed instructions
+            const instructions = `
+                <div style="font-family: Arial; line-height: 1.6; padding: 20px; max-width: 500px;">
+                    <h3 style="color: #2c3e50; margin-bottom: 15px;">📷 Manual Screenshot Instructions</h3>
+                    
+                    <p><strong>DDC interface opened in new tab!</strong></p>
+                    
+                    <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; margin: 15px 0;">
+                        <h4 style="margin-top: 0; color: #34495e;">🖥️ Windows Users:</h4>
+                        <p style="margin: 5px 0;"><kbd style="background: #e9ecef; padding: 2px 6px; border-radius: 3px;">Win + Shift + S</kbd> - Snipping Tool</p>
+                        <p style="margin: 5px 0;"><kbd style="background: #e9ecef; padding: 2px 6px; border-radius: 3px;">Print Screen</kbd> - Full screen capture</p>
+                    </div>
+                    
+                    <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; margin: 15px 0;">
+                        <h4 style="margin-top: 0; color: #34495e;">🍎 Mac Users:</h4>
+                        <p style="margin: 5px 0;"><kbd style="background: #e9ecef; padding: 2px 6px; border-radius: 3px;">Cmd + Shift + 4</kbd> - Area selection</p>
+                        <p style="margin: 5px 0;"><kbd style="background: #e9ecef; padding: 2px 6px; border-radius: 3px;">Cmd + Shift + 3</kbd> - Full screen</p>
+                    </div>
+                    
+                    <div style="background: #e3f2fd; padding: 15px; border-radius: 8px; margin: 15px 0;">
+                        <h4 style="margin-top: 0; color: #1976d2;">🌐 Browser Screenshot:</h4>
+                        <p style="margin: 5px 0;">1. Press <kbd style="background: #e9ecef; padding: 2px 6px; border-radius: 3px;">F12</kbd> to open DevTools</p>
+                        <p style="margin: 5px 0;">2. Press <kbd style="background: #e9ecef; padding: 2px 6px; border-radius: 3px;">Ctrl + Shift + P</kbd> (Windows) or <kbd style="background: #e9ecef; padding: 2px 6px; border-radius: 3px;">Cmd + Shift + P</kbd> (Mac)</p>
+                        <p style="margin: 5px 0;">3. Type "screenshot" and select "Capture full size screenshot"</p>
+                    </div>
+                    
+                    <p style="color: #27ae60; font-weight: bold;">✨ This method captures the actual DDC4000 interface without browser security restrictions!</p>
+                </div>
+            `;
+            
+            // Show instructions in a modal
+            const modal = this.createInstructionsModal('Screenshot Instructions', instructions);
+            document.body.appendChild(modal);
+            
+        } else {
+            this.showError('No DDC interface loaded yet.');
+        }
+    }
+    
+    createInstructionsModal(title, content) {
+        const overlay = document.createElement('div');
+        overlay.style.cssText = `
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.8);
+            z-index: 3000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        `;
+
+        const modal = document.createElement('div');
+        modal.style.cssText = `
+            background: white;
+            border-radius: 8px;
+            max-width: 600px;
+            max-height: 80vh;
+            overflow-y: auto;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+        `;
+
+        const header = document.createElement('div');
+        header.style.cssText = `
+            background: #2c3e50;
+            color: white;
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        `;
+
+        const titleEl = document.createElement('h2');
+        titleEl.textContent = title;
+        titleEl.style.margin = '0';
+        header.appendChild(titleEl);
+
+        const closeBtn = document.createElement('button');
+        closeBtn.textContent = '×';
+        closeBtn.style.cssText = `
+            background: #e74c3c;
+            color: white;
+            border: none;
+            width: 28px;
+            height: 28px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+        `;
+        closeBtn.onclick = () => overlay.remove();
+        header.appendChild(closeBtn);
+
+        const body = document.createElement('div');
+        body.innerHTML = content;
+
+        modal.appendChild(header);
+        modal.appendChild(body);
+        overlay.appendChild(modal);
+
+        overlay.onclick = (e) => {
+            if (e.target === overlay) overlay.remove();
+        };
+
+        return overlay;
+    }
+
+    copyDdcUrl() {
+        const iframe = this.websiteFrame;
+        if (iframe.src) {
+            navigator.clipboard.writeText(iframe.src).then(() => {
+                this.showSuccess('DDC URL copied to clipboard!');
+            }).catch(() => {
+                this.showError('Failed to copy URL. URL: ' + iframe.src);
+            });
+        } else {
+            this.showError('No DDC interface loaded yet.');
+        }
+    }
+
+    openDdcImageDirect() {
+        const iframe = this.websiteFrame;
+        if (iframe.src) {
+            const url = new URL(iframe.src);
+            const timestamp = Date.now();
+            const cid = Math.floor(Math.random() * 999999);
+            const imageUrl = `${url.protocol}//${url.host}/ddcmain_0.gif?cid=${cid}&time=${timestamp}`;
+            
+            window.open(imageUrl, '_blank');
+            this.showSuccess('Attempting to open DDC image directly...');
+        } else {
+            this.showError('No DDC interface loaded yet.');
+        }
+    }
+
+    // Screenshot functionality - Focus on capturing the actual iframe visual content
     async captureScreenshot() {
         try {
             this.captureBtn.textContent = '⏳';
             this.captureBtn.disabled = true;
             
-            // Method 1: Direct GIF download from iframe source
-            try {
-                console.log('✅ Attempting direct GIF capture from iframe');
-                await this.captureGifDirectly();
+            // Debug: Check current iframe URL
+            const currentIframeUrl = this.websiteFrame.src;
+            console.log('🔍 Current iframe URL:', currentIframeUrl);
+            
+            // Check if we have a DDC interface loaded
+            if (!currentIframeUrl || currentIframeUrl.includes('127.0.0.1') || currentIframeUrl.includes('localhost')) {
+                this.showError('Please load a DDC interface first! Enter an IP address and click "Load DDC Interface".');
                 return;
-            } catch (e) {
-                console.log('❌ Direct GIF capture failed:', e.message);
             }
             
-            // Method 2: Try to find gif in iframe content
+            console.log('📸 Starting iframe visual content capture...');
+            console.log('🎯 Target: Capture what the user actually sees in the iframe');
+            
+            // Method 1: Advanced html2canvas with iframe focus
             try {
-                console.log('✅ Searching for GIF in iframe content');
-                await this.findAndCaptureGif();
+                console.log('✅ Attempting enhanced iframe capture with html2canvas');
+                await this.captureIframeVisualContent();
                 return;
             } catch (e) {
-                console.log('❌ GIF search failed:', e.message);
+                console.log('❌ Enhanced iframe capture failed:', e.message);
             }
             
-            // Method 3: Try html2canvas as fallback
+            // Method 2: Try browser's built-in capture if available
             try {
-                console.log('✅ Attempting html2canvas fallback');
-                await this.captureIframeWithHtml2Canvas();
+                console.log('✅ Attempting browser native capture');
+                await this.captureBrowserNative();
                 return;
             } catch (e) {
-                console.log('❌ html2canvas failed:', e.message);
+                console.log('❌ Browser native capture failed:', e.message);
             }
             
-            // Method 4: Create a visual representation
-            console.log('📝 Using enhanced visual capture');
-            this.captureEnhancedVisual();
+            // Method 3: Try domvas library for cross-origin iframe capture
+            try {
+                console.log('✅ Attempting domvas iframe capture');
+                await this.captureWithDomvas();
+                return;
+            } catch (e) {
+                console.log('❌ domvas failed:', e.message);
+            }
+            
+            // Method 4: Manual iframe element capture
+            try {
+                console.log('✅ Attempting manual iframe element capture');
+                await this.captureIframeElement();
+                return;
+            } catch (e) {
+                console.log('❌ Manual iframe capture failed:', e.message);
+            }
+            
+            // Method 5: Create a visual representation with instructions
+            console.log('📝 Creating enhanced visual representation with capture instructions');
+            this.captureEnhancedVisualWithInstructions();
             
         } catch (error) {
             console.error('Screenshot capture failed:', error);
             this.showError('Screenshot capture failed. Creating visual representation instead.');
-            this.captureEnhancedVisual();
+            this.captureEnhancedVisualWithInstructions();
         } finally {
             this.captureBtn.textContent = '📷';
             this.captureBtn.disabled = false;
         }
+    }
+    
+    
+    async captureWithDomvas() {
+        // Try multiple domvas library sources and APIs
+        const domvasSources = [
+            'https://rawgit.com/pbakaus/domvas/master/src/domvas.js',
+            'https://cdn.jsdelivr.net/gh/pbakaus/domvas@master/src/domvas.js',
+            'https://unpkg.com/domvas@1.0.2/src/domvas.js'
+        ];
+        
+        for (const src of domvasSources) {
+            if (!window.domvas) {
+                try {
+                    console.log('📦 Loading domvas library from:', src);
+                    const script = document.createElement('script');
+                    script.src = src;
+                    document.head.appendChild(script);
+                    
+                    await new Promise((resolve, reject) => {
+                        script.onload = () => {
+                            console.log('✅ domvas library loaded from:', src);
+                            resolve();
+                        };
+                        script.onerror = () => {
+                            reject(new Error('Failed to load from ' + src));
+                        };
+                        setTimeout(() => reject(new Error('Timeout loading ' + src)), 5000);
+                    });
+                    
+                    // Test if domvas is properly loaded
+                    if (window.domvas) {
+                        console.log('🔍 domvas object:', Object.keys(window.domvas));
+                        break;
+                    }
+                } catch (e) {
+                    console.log('❌ Failed to load domvas from', src, ':', e.message);
+                    continue;
+                }
+            }
+        }
+        
+        if (!window.domvas) {
+            throw new Error('Failed to load domvas library from any source');
+        }
+        
+        const iframe = this.websiteFrame;
+        
+        if (!iframe.src) {
+            throw new Error('No iframe source URL');
+        }
+        
+        console.log('🎯 Starting domvas iframe capture...');
+        console.log('📍 Target iframe:', iframe.src);
+        console.log('📐 Iframe dimensions:', iframe.offsetWidth, 'x', iframe.offsetHeight);
+        
+        return new Promise((resolve, reject) => {
+            try {
+                // Try different domvas API patterns
+                if (typeof window.domvas.toImage === 'function') {
+                    console.log('🔧 Using domvas.toImage API');
+                    window.domvas.toImage(iframe, function(canvas) {
+                        console.log('📊 domvas.toImage callback called with:', canvas ? 'canvas object' : 'null');
+                        this.processDomvasResult(canvas, resolve, reject);
+                    }.bind(this));
+                } else if (typeof window.domvas.toCanvas === 'function') {
+                    console.log('🔧 Using domvas.toCanvas API');
+                    window.domvas.toCanvas(iframe, function(canvas) {
+                        this.processDomvasResult(canvas, resolve, reject);
+                    }.bind(this));
+                } else if (typeof window.domvas === 'function') {
+                    console.log('🔧 Using domvas direct function API');
+                    window.domvas(iframe, function(canvas) {
+                        this.processDomvasResult(canvas, resolve, reject);
+                    }.bind(this));
+                } else {
+                    throw new Error('Unknown domvas API - available methods: ' + Object.keys(window.domvas));
+                }
+                
+                // Set a timeout for domvas
+                setTimeout(() => {
+                    reject(new Error('domvas timeout'));
+                }, 10000);
+                
+            } catch (syncError) {
+                console.log('❌ domvas sync error:', syncError);
+                reject(syncError);
+            }
+        });
+    }
+    
+    async analyzeDdcStructure() {
+        const iframe = this.websiteFrame;
+        const iframeSrc = iframe.src;
+        
+        if (!iframeSrc) {
+            throw new Error('No iframe source URL');
+        }
+        
+        console.log('🔍 Analyzing DDC4000 structure...');
+        console.log('📍 Iframe URL:', iframeSrc);
+        
+        // Parse the iframe URL to understand DDC parameters
+        const url = new URL(iframeSrc);
+        const searchParams = url.searchParams;
+        
+        console.log('🔧 DDC Parameters found:');
+        console.log('   - useOvl:', searchParams.get('useOvl'));
+        console.log('   - busyReload:', searchParams.get('busyReload'));
+        console.log('   - type:', searchParams.get('type'));
+        console.log('   - _t:', searchParams.get('_t'));
+        
+        // Try to access iframe content to see the actual structure
+        let iframeDoc;
+        try {
+            // Wait a moment for iframe to load
+            await new Promise(resolve => setTimeout(resolve, 2000));
+            
+            iframeDoc = iframe.contentDocument || iframe.contentWindow?.document;
+            if (iframeDoc) {
+                console.log('✅ Successfully accessed iframe document');
+                console.log('📄 Document title:', iframeDoc.title);
+                console.log('🌐 Document URL:', iframeDoc.URL);
+                console.log('📄 Body content length:', iframeDoc.body?.innerHTML?.length || 0);
+                
+                // Look for all elements that might contain images
+                const allElements = iframeDoc.querySelectorAll('*');
+                console.log(`🔍 Found ${allElements.length} elements in iframe`);
+                
+                // Check for specific DDC elements
+                const images = iframeDoc.querySelectorAll('img');
+                const frames = iframeDoc.querySelectorAll('iframe, frame');
+                const objects = iframeDoc.querySelectorAll('object, embed');
+                
+                console.log(`🖼️ Images: ${images.length}`);
+                console.log(`📺 Frames: ${frames.length}`);
+                console.log(`🎯 Objects: ${objects.length}`);
+                
+                // Analyze each image
+                for (let i = 0; i < images.length; i++) {
+                    const img = images[i];
+                    console.log(`📸 Image ${i + 1}:`, {
+                        src: img.src,
+                        width: img.width || 'auto',
+                        height: img.height || 'auto',
+                        naturalWidth: img.naturalWidth || 'unknown',
+                        naturalHeight: img.naturalHeight || 'unknown',
+                        complete: img.complete,
+                        alt: img.alt || 'none'
+                    });
+                    
+                    // If this looks like a DDC image, try to capture it
+                    if (img.src && img.naturalWidth > 100 && img.naturalHeight > 100) {
+                        console.log('🎯 Found substantial image, attempting capture...');
+                        
+                        try {
+                            const canvas = document.createElement('canvas');
+                            const ctx = canvas.getContext('2d');
+                            
+                            canvas.width = img.naturalWidth;
+                            canvas.height = img.naturalHeight;
+                            
+                            // Wait for image to be fully loaded
+                            if (!img.complete) {
+                                await new Promise((resolve, reject) => {
+                                    img.onload = resolve;
+                                    img.onerror = reject;
+                                    setTimeout(reject, 3000); // 3 second timeout
+                                });
+                            }
+                            
+                            ctx.drawImage(img, 0, 0);
+                            
+                            // Check for actual content
+                            const imageData = ctx.getImageData(0, 0, Math.min(canvas.width, 100), Math.min(canvas.height, 100));
+                            const data = imageData.data;
+                            
+                            let colorVariance = 0;
+                            let nonWhitePixels = 0;
+                            
+                            for (let j = 0; j < data.length; j += 4) {
+                                const r = data[j];
+                                const g = data[j + 1];
+                                const b = data[j + 2];
+                                const a = data[j + 3];
+                                
+                                if (a > 0) {
+                                    if (r < 250 || g < 250 || b < 250) {
+                                        nonWhitePixels++;
+                                    }
+                                    
+                                    // Calculate color variance (helps detect actual interface vs blank)
+                                    const variance = Math.abs(r - 128) + Math.abs(g - 128) + Math.abs(b - 128);
+                                    colorVariance += variance;
+                                }
+                            }
+                            
+                            const avgVariance = colorVariance / (data.length / 4);
+                            console.log(`📊 Image analysis: ${nonWhitePixels} non-white pixels, avg variance: ${avgVariance.toFixed(2)}`);
+                            
+                            // If we have enough content and color variation, it's likely real interface content
+                            if (nonWhitePixels > 50 && avgVariance > 10) {
+                                console.log('🎉 Found actual DDC interface content!');
+                                const dataUrl = canvas.toDataURL('image/png', 1.0);
+                                this.saveScreenshot(dataUrl);
+                                return;
+                            } else {
+                                console.log('⚠️ Image appears to be mostly blank or low-content');
+                            }
+                            
+                        } catch (canvasError) {
+                            console.log('❌ Canvas capture failed:', canvasError.message);
+                        }
+                    }
+                }
+                
+                // Analyze frames for nested content
+                for (let i = 0; i < frames.length; i++) {
+                    const frame = frames[i];
+                    console.log(`📺 Frame ${i + 1}:`, {
+                        src: frame.src,
+                        width: frame.width || 'auto',
+                        height: frame.height || 'auto',
+                        name: frame.name || 'none'
+                    });
+                    
+                    // Try to access nested frame content
+                    try {
+                        const nestedDoc = frame.contentDocument || frame.contentWindow?.document;
+                        if (nestedDoc) {
+                            console.log(`✅ Accessed nested frame ${i + 1} content`);
+                            const nestedImages = nestedDoc.querySelectorAll('img');
+                            console.log(`   Found ${nestedImages.length} images in nested frame`);
+                            
+                            for (const nestedImg of nestedImages) {
+                                if (nestedImg.src && nestedImg.naturalWidth > 100) {
+                                    console.log('🎯 Found image in nested frame:', nestedImg.src);
+                                    
+                                    // Try the same capture logic for nested images
+                                    try {
+                                        const canvas = document.createElement('canvas');
+                                        const ctx = canvas.getContext('2d');
+                                        
+                                        canvas.width = nestedImg.naturalWidth;
+                                        canvas.height = nestedImg.naturalHeight;
+                                        
+                                        if (!nestedImg.complete) {
+                                            await new Promise((resolve, reject) => {
+                                                nestedImg.onload = resolve;
+                                                nestedImg.onerror = reject;
+                                                setTimeout(reject, 3000);
+                                            });
+                                        }
+                                        
+                                        ctx.drawImage(nestedImg, 0, 0);
+                                        const dataUrl = canvas.toDataURL('image/png', 1.0);
+                                        this.saveScreenshot(dataUrl);
+                                        console.log('🎉 Successfully captured nested frame image!');
+                                        return;
+                                        
+                                    } catch (nestedError) {
+                                        console.log('❌ Nested frame capture failed:', nestedError.message);
+                                    }
+                                }
+                            }
+                        }
+                    } catch (nestedAccessError) {
+                        console.log(`❌ Cannot access nested frame ${i + 1}:`, nestedAccessError.message);
+                    }
+                }
+                
+                // Check for any script-generated content or dynamic elements
+                const scripts = iframeDoc.querySelectorAll('script');
+                console.log(`📜 Found ${scripts.length} script elements`);
+                
+                // Look for any references to image URLs in scripts
+                for (const script of scripts) {
+                    if (script.textContent) {
+                        const imageMatches = script.textContent.match(/\.gif[\w?&=]*/g);
+                        if (imageMatches) {
+                            console.log('🔍 Found GIF references in script:', imageMatches);
+                        }
+                    }
+                }
+                
+            } else {
+                console.log('❌ Cannot access iframe document (cross-origin restriction)');
+            }
+        } catch (accessError) {
+            console.log('❌ Iframe access error:', accessError.message);
+        }
+        
+        // If we couldn't find anything in the iframe, try constructing the proper DDC URLs
+        // based on common DDC4000 patterns with the parameters we extracted
+        console.log('🔧 Attempting to construct proper DDC image URLs...');
+        
+        const baseUrl = `${url.protocol}//${url.host}`;
+        const timestamp = Date.now();
+        const cid = Math.floor(Math.random() * 999999);
+        
+        // DDC4000 often uses session-based parameters
+        const possibleUrls = [
+            // Try with the same parameters as the main dialog
+            `${baseUrl}/ddcmain_0.gif?useOvl=1&busyReload=1&type=${searchParams.get('type') || 'WVGA'}&_t=${timestamp}`,
+            `${baseUrl}/ddcdialog.gif?useOvl=1&busyReload=1&type=${searchParams.get('type') || 'WVGA'}&_t=${timestamp}`,
+            
+            // Try with cid parameter (common in DDC systems)
+            `${baseUrl}/ddcmain_0.gif?cid=${cid}&time=${timestamp}`,
+            `${baseUrl}/ddcdialog.gif?cid=${cid}&time=${timestamp}`,
+            
+            // Try without parameters
+            `${baseUrl}/ddcmain_0.gif`,
+            `${baseUrl}/ddcdialog.gif`,
+            
+            // Try the exact iframe URL as an image
+            iframeSrc
+        ];
+        
+        for (const testUrl of possibleUrls) {
+            try {
+                console.log(`📡 Testing constructed URL: ${testUrl}`);
+                
+                const img = new Image();
+                img.crossOrigin = 'anonymous';
+                
+                const result = await new Promise((resolve, reject) => {
+                    const timeout = setTimeout(() => {
+                        reject(new Error('Timeout'));
+                    }, 3000);
+                    
+                    img.onload = () => {
+                        clearTimeout(timeout);
+                        resolve(img);
+                    };
+                    
+                    img.onerror = () => {
+                        clearTimeout(timeout);
+                        reject(new Error('Failed to load'));
+                    };
+                    
+                    img.src = testUrl;
+                });
+                
+                // Success! Try to capture it
+                console.log(`✅ Successfully loaded image from: ${testUrl}`);
+                console.log(`📐 Image size: ${result.naturalWidth} × ${result.naturalHeight}`);
+                
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
+                
+                canvas.width = result.naturalWidth || result.width;
+                canvas.height = result.naturalHeight || result.height;
+                
+                ctx.drawImage(result, 0, 0);
+                const dataUrl = canvas.toDataURL('image/png', 1.0);
+                
+                this.saveScreenshot(dataUrl);
+                console.log('🎉 Successfully captured DDC image via URL construction!');
+                return;
+                
+            } catch (error) {
+                console.log(`❌ Failed to load ${testUrl}: ${error.message}`);
+            }
+        }
+        
+        throw new Error('Could not find or access any DDC4000 images');
+    }
+    
+    async captureIframeVisualContent() {
+        // Load html2canvas if not available
+        if (!window.html2canvas) {
+            const script = document.createElement('script');
+            script.src = 'https://html2canvas.hertzen.com/dist/html2canvas.min.js';
+            document.head.appendChild(script);
+            
+            await new Promise((resolve, reject) => {
+                script.onload = resolve;
+                script.onerror = reject;
+                setTimeout(() => reject(new Error('html2canvas load timeout')), 10000);
+            });
+        }
+        
+        console.log('🎯 Capturing iframe visual content with enhanced html2canvas...');
+        
+        const iframe = this.websiteFrame;
+        const iframeContainer = this.iframeContainer;
+        
+        // Get iframe position and size
+        const iframeRect = iframe.getBoundingClientRect();
+        const containerRect = iframeContainer.getBoundingClientRect();
+        
+        console.log('📐 Iframe dimensions:', {
+            width: iframeRect.width,
+            height: iframeRect.height,
+            left: iframeRect.left,
+            top: iframeRect.top
+        });
+        
+        // Try to capture just the iframe area with maximum compatibility
+        const canvas = await html2canvas(document.body, {
+            useCORS: false,
+            allowTaint: true,
+            foreignObjectRendering: false,
+            scale: 2, // Higher quality
+            width: window.innerWidth,
+            height: window.innerHeight,
+            x: 0,
+            y: 0,
+            scrollX: 0,
+            scrollY: 0,
+            logging: true,
+            backgroundColor: null,
+            removeContainer: false,
+            imageTimeout: 15000,
+            onclone: (clonedDoc, element) => {
+                console.log('📋 Document cloned for iframe capture');
+                
+                // Find the iframe in the cloned document
+                const clonedIframe = clonedDoc.querySelector('#websiteFrame');
+                if (clonedIframe) {
+                    console.log('🖼️ Found iframe in cloned document');
+                    console.log('📍 Iframe src:', clonedIframe.src);
+                    
+                    // Ensure iframe is visible and properly sized
+                    clonedIframe.style.display = 'block';
+                    clonedIframe.style.visibility = 'visible';
+                    clonedIframe.style.opacity = '1';
+                    clonedIframe.style.border = '2px solid red'; // Debug border
+                    clonedIframe.style.backgroundColor = '#ffffff';
+                    
+                    // Try to access iframe content if possible
+                    try {
+                        const iframeDoc = clonedIframe.contentDocument;
+                        if (iframeDoc) {
+                            console.log('✅ Can access cloned iframe content');
+                            // Make sure iframe content is visible
+                            if (iframeDoc.body) {
+                                iframeDoc.body.style.visibility = 'visible';
+                                iframeDoc.body.style.opacity = '1';
+                            }
+                        }
+                    } catch (e) {
+                        console.log('❌ Cannot access cloned iframe content (cross-origin)');
+                    }
+                } else {
+                    console.log('❌ Iframe not found in cloned document');
+                }
+                
+                // Hide everything except the iframe container
+                const allElements = clonedDoc.querySelectorAll('*');
+                for (const el of allElements) {
+                    if (el !== clonedDoc.documentElement && 
+                        el !== clonedDoc.body && 
+                        !el.closest('#iframeContainer') &&
+                        el.id !== 'iframeContainer' &&
+                        el.id !== 'websiteFrame') {
+                        el.style.display = 'none';
+                    }
+                }
+                
+                // Make iframe container more visible
+                const clonedContainer = clonedDoc.querySelector('#iframeContainer');
+                if (clonedContainer) {
+                    clonedContainer.style.backgroundColor = '#ffffff';
+                    clonedContainer.style.border = '3px solid blue'; // Debug border
+                }
+            }
+        });
+        
+        console.log('✅ html2canvas completed for iframe capture');
+        console.log('📐 Canvas size:', canvas.width, 'x', canvas.height);
+        
+        // Crop the canvas to just the iframe area
+        const iframeX = Math.max(0, (iframeRect.left - containerRect.left) * 2); // Scale factor 2
+        const iframeY = Math.max(0, (iframeRect.top - containerRect.top) * 2);
+        const iframeWidth = Math.min(canvas.width - iframeX, iframeRect.width * 2);
+        const iframeHeight = Math.min(canvas.height - iframeY, iframeRect.height * 2);
+        
+        console.log('✂️ Cropping to iframe area:', {
+            x: iframeX,
+            y: iframeY,
+            width: iframeWidth,
+            height: iframeHeight
+        });
+        
+        // Create a new canvas with just the iframe content
+        const croppedCanvas = document.createElement('canvas');
+        const croppedCtx = croppedCanvas.getContext('2d');
+        
+        croppedCanvas.width = Math.max(100, iframeWidth);
+        croppedCanvas.height = Math.max(100, iframeHeight);
+        
+        // Fill with white background first
+        croppedCtx.fillStyle = '#ffffff';
+        croppedCtx.fillRect(0, 0, croppedCanvas.width, croppedCanvas.height);
+        
+        // Draw the iframe portion
+        croppedCtx.drawImage(
+            canvas,
+            iframeX, iframeY, iframeWidth, iframeHeight,
+            0, 0, croppedCanvas.width, croppedCanvas.height
+        );
+        
+        // Check if we captured actual content
+        const imageData = croppedCtx.getImageData(0, 0, Math.min(croppedCanvas.width, 100), Math.min(croppedCanvas.height, 100));
+        const data = imageData.data;
+        
+        let colorfulPixels = 0;
+        let totalPixels = 0;
+        
+        for (let i = 0; i < data.length; i += 4) {
+            const r = data[i];
+            const g = data[i + 1];
+            const b = data[i + 2];
+            const a = data[i + 3];
+            
+            if (a > 0) {
+                totalPixels++;
+                // Check for any non-white/gray content
+                if (r < 240 || g < 240 || b < 240 || 
+                    Math.abs(r - g) > 10 || Math.abs(g - b) > 10 || Math.abs(r - b) > 10) {
+                    colorfulPixels++;
+                }
+            }
+        }
+        
+        const contentPercentage = totalPixels > 0 ? (colorfulPixels / totalPixels) * 100 : 0;
+        console.log(`📊 Content analysis: ${colorfulPixels}/${totalPixels} colorful pixels (${contentPercentage.toFixed(1)}%)`);
+        
+        const dataUrl = croppedCanvas.toDataURL('image/png', 1.0);
+        this.saveScreenshot(dataUrl);
+        
+        if (contentPercentage > 5) {
+            console.log('🎉 Successfully captured iframe visual content!');
+        } else {
+            console.log('⚠️ Captured iframe but content appears mostly empty');
+        }
+    }
+    
+    async captureBrowserNative() {
+        // Try modern browser capture APIs if available
+        if (navigator.mediaDevices && navigator.mediaDevices.getDisplayMedia) {
+            console.log('🎥 Attempting screen capture with getDisplayMedia...');
+            
+            try {
+                const stream = await navigator.mediaDevices.getDisplayMedia({
+                    video: {
+                        mediaSource: 'screen'
+                    }
+                });
+                
+                const video = document.createElement('video');
+                video.srcObject = stream;
+                video.play();
+                
+                return new Promise((resolve, reject) => {
+                    video.onloadedmetadata = () => {
+                        const canvas = document.createElement('canvas');
+                        const ctx = canvas.getContext('2d');
+                        
+                        canvas.width = video.videoWidth;
+                        canvas.height = video.videoHeight;
+                        
+                        ctx.drawImage(video, 0, 0);
+                        
+                        // Stop the stream
+                        stream.getTracks().forEach(track => track.stop());
+                        
+                        const dataUrl = canvas.toDataURL('image/png', 1.0);
+                        this.saveScreenshot(dataUrl);
+                        
+                        console.log('🎉 Successfully captured screen with native API!');
+                        resolve();
+                    };
+                    
+                    setTimeout(() => {
+                        stream.getTracks().forEach(track => track.stop());
+                        reject(new Error('Screen capture timeout'));
+                    }, 10000);
+                });
+                
+            } catch (e) {
+                throw new Error('Screen capture permission denied or not supported');
+            }
+        } else {
+            throw new Error('getDisplayMedia not supported');
+        }
+    }
+    
+    async captureIframeElement() {
+        console.log('🎯 Attempting direct iframe element capture...');
+        
+        const iframe = this.websiteFrame;
+        
+        // Try to draw the iframe directly onto canvas
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        
+        const rect = iframe.getBoundingClientRect();
+        canvas.width = rect.width || 800;
+        canvas.height = rect.height || 480;
+        
+        console.log(`📐 Canvas size set to: ${canvas.width} × ${canvas.height}`);
+        
+        // Fill with background color first
+        ctx.fillStyle = '#f0f0f0';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        
+        try {
+            // Try to draw iframe directly (this may fail due to CORS)
+            ctx.drawImage(iframe, 0, 0, canvas.width, canvas.height);
+            
+            const dataUrl = canvas.toDataURL('image/png', 1.0);
+            this.saveScreenshot(dataUrl);
+            
+            console.log('✅ Successfully captured iframe element directly!');
+            
+        } catch (e) {
+            console.log('❌ Direct iframe draw failed:', e.message);
+            throw e;
+        }
+    }
+    
+    captureEnhancedVisualWithInstructions() {
+        console.log('📝 Creating enhanced visual with capture instructions...');
+        
+        const iframe = this.websiteFrame;
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        
+        // Use actual iframe dimensions
+        const rect = iframe.getBoundingClientRect();
+        canvas.width = Math.max(800, rect.width);
+        canvas.height = Math.max(480, rect.height);
+        
+        // Background
+        ctx.fillStyle = '#f8f9fa';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        
+        // Header
+        ctx.fillStyle = '#2c3e50';
+        ctx.fillRect(0, 0, canvas.width, 60);
+        
+        ctx.fillStyle = 'white';
+        ctx.font = 'bold 20px Arial';
+        ctx.textAlign = 'center';
+        ctx.fillText('📷 DDC4000 Screenshot Capture', canvas.width / 2, 35);
+        
+        // Status
+        ctx.fillStyle = '#27ae60';
+        ctx.fillRect(20, 80, canvas.width - 40, 40);
+        ctx.fillStyle = 'white';
+        ctx.font = 'bold 16px Arial';
+        ctx.fillText('✅ DDC4000 Interface Active & Connected', canvas.width / 2, 105);
+        
+        // Info section
+        ctx.fillStyle = '#3498db';
+        ctx.fillRect(20, 140, canvas.width - 40, 120);
+        ctx.fillStyle = 'white';
+        ctx.font = 'bold 14px Arial';
+        ctx.fillText('📋 Capture Information', canvas.width / 2, 165);
+        
+        ctx.font = '12px Arial';
+        ctx.textAlign = 'left';
+        const infoX = 40;
+        ctx.fillText(`🌐 Device: ${this.ipInput.value}`, infoX, 185);
+        ctx.fillText(`📐 Resolution: ${this.resolutionSelect.value}`, infoX, 205);
+        ctx.fillText(`🔗 Protocol: ${this.protocolSelect.value.toUpperCase()}`, infoX, 225);
+        ctx.fillText(`⏰ Time: ${new Date().toLocaleString()}`, infoX, 245);
+        
+        // Instructions section
+        ctx.fillStyle = '#e74c3c';
+        ctx.fillRect(20, 280, canvas.width - 40, 140);
+        ctx.fillStyle = 'white';
+        ctx.font = 'bold 14px Arial';
+        ctx.textAlign = 'center';
+        ctx.fillText('🚫 Automatic Capture Blocked by Browser Security', canvas.width / 2, 305);
+        
+        ctx.font = '12px Arial';
+        ctx.fillText('The DDC4000 interface is active but cross-origin restrictions prevent', canvas.width / 2, 330);
+        ctx.fillText('automatic screenshot capture. Use these manual methods:', canvas.width / 2, 350);
+        
+        ctx.font = 'bold 12px Arial';
+        ctx.fillStyle = '#fff3cd';
+        ctx.fillText('🖱️ Right-click the interface above and select "Save image as..."', canvas.width / 2, 375);
+        ctx.fillText('📱 Use your browser\'s screenshot tool (Ctrl+Shift+S or Cmd+Shift+4)', canvas.width / 2, 395);
+        
+        // Footer
+        ctx.fillStyle = '#6c757d';
+        ctx.fillRect(20, canvas.height - 60, canvas.width - 40, 40);
+        ctx.fillStyle = 'white';
+        ctx.font = '10px Arial';
+        ctx.fillText('This is a visual representation. The actual DDC4000 interface is displayed above.', canvas.width / 2, canvas.height - 35);
+        
+        const dataUrl = canvas.toDataURL('image/png', 1.0);
+        this.saveScreenshot(dataUrl);
+        
+        console.log('✅ Enhanced visual representation created with capture instructions');
+    }
+    
+    processDomvasResult(result, resolve, reject) {
+        if (!result) {
+            console.log('❌ domvas returned no result');
+            reject(new Error('domvas returned no result'));
+            return;
+        }
+        
+        console.log('✅ domvas success! Result type:', result.constructor.name);
+        console.log('📐 Result dimensions:', result.width, 'x', result.height);
+        
+        let canvas;
+        
+        // Check if result is an Image element and convert to Canvas
+        if (result instanceof HTMLImageElement || result.tagName === 'IMG') {
+            console.log('🔄 Converting Image element to Canvas...');
+            canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            
+            // Set canvas size to match image
+            canvas.width = result.naturalWidth || result.width;
+            canvas.height = result.naturalHeight || result.height;
+            
+            console.log('📐 Canvas created with size:', canvas.width, 'x', canvas.height);
+            
+            try {
+                // Draw the image onto the canvas
+                ctx.drawImage(result, 0, 0);
+                console.log('✅ Image successfully drawn to canvas');
+            } catch (drawError) {
+                console.log('❌ Failed to draw image to canvas:', drawError.message);
+                reject(new Error('Failed to convert image to canvas: ' + drawError.message));
+                return;
+            }
+        } else if (result.getContext) {
+            // Already a canvas
+            console.log('✅ Result is already a Canvas element');
+            canvas = result;
+        } else {
+            console.log('❌ Unknown result type:', typeof result, result.constructor.name);
+            reject(new Error('domvas returned unknown type: ' + typeof result));
+            return;
+        }
+        
+        // Check if canvas has content
+        const ctx = canvas.getContext('2d');
+        const imageData = ctx.getImageData(0, 0, Math.min(canvas.width, 100), Math.min(canvas.height, 100));
+        const data = imageData.data;
+        
+        let hasContent = false;
+        for (let i = 0; i < data.length; i += 4) {
+            const r = data[i];
+            const g = data[i + 1];
+            const b = data[i + 2];
+            const a = data[i + 3];
+            
+            // Check for non-white, non-transparent pixels
+            if (a > 0 && (r < 240 || g < 240 || b < 240)) {
+                hasContent = true;
+                break;
+            }
+        }
+        
+        console.log('📊 domvas content check:', hasContent ? 'HAS CONTENT' : 'MOSTLY EMPTY/WHITE');
+        
+        const dataUrl = canvas.toDataURL('image/png', 1.0);
+        this.saveScreenshot(dataUrl);
+        
+        if (hasContent) {
+            console.log('🎉 Successfully captured DDC iframe with domvas!');
+        } else {
+            console.log('⚠️ domvas captured mostly empty content');
+        }
+        
+        resolve();
+    }
+    
+    async captureWithIframe2Image() {
+        // Try multiple iframe2image library sources
+        const iframe2imageSources = [
+            'https://cdn.jsdelivr.net/npm/iframe2image@0.5.0/lib/iframe2image.js',
+            'https://rawgit.com/twolfson/iframe2image/master/lib/iframe2image.js',
+            'https://cdn.jsdelivr.net/gh/twolfson/iframe2image@master/lib/iframe2image.js'
+        ];
+        
+        for (const src of iframe2imageSources) {
+            if (!window.iframe2image) {
+                try {
+                    console.log('📦 Loading iframe2image library from:', src);
+                    const script = document.createElement('script');
+                    script.src = src;
+                    document.head.appendChild(script);
+            
+                    await new Promise((resolve, reject) => {
+                        script.onload = () => {
+                            console.log('✅ iframe2image library loaded from:', src);
+                            resolve();
+                        };
+                        script.onerror = () => {
+                            reject(new Error('Failed to load from ' + src));
+                        };
+                        setTimeout(() => reject(new Error('Timeout loading ' + src)), 5000);
+                    });
+                    
+                    // Test if iframe2image is properly loaded
+                    if (window.iframe2image) {
+                        console.log('🔍 iframe2image object:', typeof window.iframe2image);
+                        break;
+                    }
+                } catch (e) {
+                    console.log('❌ Failed to load iframe2image from', src, ':', e.message);
+                    continue;
+                }
+            }
+        }
+        
+        if (!window.iframe2image) {
+            throw new Error('Failed to load iframe2image library from any source');
+        }
+        
+        const iframe = this.websiteFrame;
+        
+        if (!iframe.src) {
+            throw new Error('No iframe source URL');
+        }
+        
+        console.log('🎯 Starting iframe2image capture...');
+        console.log('📍 Target iframe:', iframe.src);
+        console.log('📐 Iframe dimensions:', iframe.offsetWidth, 'x', iframe.offsetHeight);
+        
+        // iframe2image options
+        const options = {
+            // Timeout for iframe to load
+            timeout: 10000,
+            // Image format
+            format: 'png',
+            // Quality (for jpeg)
+            quality: 1.0,
+            // Callback for when iframe loads
+            onload: () => {
+                console.log('🔄 iframe2image: iframe loaded');
+            },
+            // Error callback
+            onerror: (error) => {
+                console.log('❌ iframe2image: error occurred', error);
+            }
+        };
+        
+        return new Promise((resolve, reject) => {
+            try {
+                // Call iframe2image
+                window.iframe2image(iframe, options, (error, canvas) => {
+                    if (error) {
+                        console.log('❌ iframe2image failed:', error);
+                        reject(new Error('iframe2image failed: ' + error.message));
+                        return;
+                    }
+                    
+                    if (!canvas) {
+                        console.log('❌ iframe2image returned no canvas');
+                        reject(new Error('iframe2image returned no canvas'));
+                        return;
+                    }
+                    
+                    console.log('✅ iframe2image success! Canvas size:', canvas.width, 'x', canvas.height);
+                    
+                    // Check if canvas has content
+                    const ctx = canvas.getContext('2d');
+                    const imageData = ctx.getImageData(0, 0, Math.min(canvas.width, 50), Math.min(canvas.height, 50));
+                    const data = imageData.data;
+                    
+                    let hasContent = false;
+                    for (let i = 0; i < data.length; i += 4) {
+                        const r = data[i];
+                        const g = data[i + 1];
+                        const b = data[i + 2];
+                        const a = data[i + 3];
+                        
+                        // Check for non-white, non-transparent pixels
+                        if (a > 0 && (r < 240 || g < 240 || b < 240)) {
+                            hasContent = true;
+                            break;
+                        }
+                    }
+                    
+                    console.log('📊 Canvas content check:', hasContent ? 'HAS CONTENT' : 'MOSTLY EMPTY/WHITE');
+                    
+                    const dataUrl = canvas.toDataURL('image/png', 1.0);
+                    this.saveScreenshot(dataUrl);
+                    
+                    if (hasContent) {
+                        console.log('🎉 Successfully captured DDC iframe with iframe2image!');
+                    } else {
+                        console.log('⚠️ iframe2image captured mostly empty content');
+                    }
+                    
+                    resolve();
+                });
+            } catch (syncError) {
+                console.log('❌ iframe2image sync error:', syncError);
+                reject(syncError);
+            }
+        });
     }
     
     async captureGifDirectly() {
@@ -699,181 +1879,441 @@ class DDCBrowser {
         }
         
         const url = new URL(iframeSrc);
+        console.log('🎯 Starting direct GIF capture from DDC4000...');
+        console.log('📍 Base URL:', `${url.protocol}//${url.host}`);
         
-        // Create a simple approach: add an image to the page that loads the DDC gif
-        // This will allow us to capture it when it loads
-        const captureContainer = document.createElement('div');
-        captureContainer.style.position = 'absolute';
-        captureContainer.style.top = '-9999px';
-        captureContainer.style.left = '-9999px';
-        captureContainer.style.width = '1px';
-        captureContainer.style.height = '1px';
-        captureContainer.style.overflow = 'hidden';
-        document.body.appendChild(captureContainer);
+        // DDC4000 typically serves dynamic GIF images
+        const timestamp = Date.now();
+        const cid = Math.floor(Math.random() * 999999);
         
-        try {
-            // DDC4000 dynamic image pattern: ddcmain_0.gif?cid=xxxxx&time=xxxxx
-            const timestamp = Date.now();
-            const cid = Math.floor(Math.random() * 999999);
+        // Extended list of common DDC4000 image endpoints
+        const possibleUrls = [
+            // Most common DDC4000 patterns
+            `${url.protocol}//${url.host}/ddcmain_0.gif?cid=${cid}&time=${timestamp}`,
+            `${url.protocol}//${url.host}/ddcmain.gif?cid=${cid}&time=${timestamp}`,
+            `${url.protocol}//${url.host}/ddcdialog.gif?cid=${cid}&time=${timestamp}`,
+            `${url.protocol}//${url.host}/ddcframe_0.gif?cid=${cid}&time=${timestamp}`,
             
-            const possibleUrls = [
-                `${url.protocol}//${url.host}/ddcmain_0.gif?cid=${cid}&time=${timestamp}`,
-                `${url.protocol}//${url.host}/ddcmain.gif?cid=${cid}&time=${timestamp}`,
-                `${url.protocol}//${url.host}/ddcmain_1.gif?cid=${cid}&time=${timestamp}`,
-                `${url.protocol}//${url.host}/ddcmain_0.gif`,
-                `${url.protocol}//${url.host}/ddcmain.gif`,
-            ];
+            // Static versions
+            `${url.protocol}//${url.host}/ddcmain_0.gif`,
+            `${url.protocol}//${url.host}/ddcmain.gif`,
+            `${url.protocol}//${url.host}/ddcdialog.gif`,
+            `${url.protocol}//${url.host}/ddcframe_0.gif`,
             
-            for (const testUrl of possibleUrls) {
-                console.log(`Attempting to load DDC image: ${testUrl}`);
+            // Alternative patterns
+            `${url.protocol}//${url.host}/main.gif?cid=${cid}&time=${timestamp}`,
+            `${url.protocol}//${url.host}/dialog.gif?cid=${cid}&time=${timestamp}`,
+            `${url.protocol}//${url.host}/image.gif?cid=${cid}&time=${timestamp}`,
+            
+            // Numbered variations
+            `${url.protocol}//${url.host}/ddcmain_1.gif?cid=${cid}&time=${timestamp}`,
+            `${url.protocol}//${url.host}/ddcmain_2.gif?cid=${cid}&time=${timestamp}`,
+            `${url.protocol}//${url.host}/ddcframe_1.gif?cid=${cid}&time=${timestamp}`,
+        ];
+        
+        console.log('🔍 Testing', possibleUrls.length, 'possible DDC image URLs...');
+        
+        for (const testUrl of possibleUrls) {
+            try {
+                console.log(`📡 Testing: ${testUrl}`);
                 
+                // Use fetch first to check if the URL exists and get headers
+                const response = await fetch(testUrl, {
+                    method: 'GET',
+                    mode: 'no-cors',
+                    cache: 'no-cache',
+                    credentials: 'omit'
+                });
+                
+                // For no-cors requests, we can't check status, so try to load as image
                 const img = new Image();
+                img.crossOrigin = 'anonymous'; // Try to enable CORS
                 
                 const result = await new Promise((resolve, reject) => {
                     const timeout = setTimeout(() => {
                         reject(new Error('Timeout loading image'));
+                    }, 5000);
+                    
+                    img.onload = () => {
+                        clearTimeout(timeout);
+                        console.log(`✅ DDC image loaded successfully: ${testUrl}`);
+                        console.log(`📐 Image dimensions: ${img.naturalWidth || img.width} × ${img.naturalHeight || img.height}`);
+                        resolve(img);
+                    };
+                    
+                    img.onerror = (e) => {
+                        clearTimeout(timeout);
+                        console.log(`❌ Failed to load image: ${testUrl} (${e.message || 'unknown error'})`);
+                        reject(new Error('Failed to load image: ' + (e.message || 'unknown error')));
+                    };
+                    
+                    // Set the src to start loading
+                    img.src = testUrl;
+                });
+                
+                // If we get here, the image loaded successfully
+                console.log('🎨 Creating canvas to capture the DDC image...');
+                
+                // Create canvas to capture the image
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
+                
+                canvas.width = result.naturalWidth || result.width || 800;
+                canvas.height = result.naturalHeight || result.height || 480;
+                
+                console.log(`📐 Canvas size: ${canvas.width} × ${canvas.height}`);
+                
+                try {
+                    // Try to draw the image to canvas
+                    ctx.drawImage(result, 0, 0);
+                    
+                    // Check if we actually captured content
+                    const imageData = ctx.getImageData(0, 0, Math.min(canvas.width, 100), Math.min(canvas.height, 100));
+                    const data = imageData.data;
+                    
+                    let hasContent = false;
+                    let nonWhitePixels = 0;
+                    for (let i = 0; i < data.length; i += 4) {
+                        const r = data[i];
+                        const g = data[i + 1];
+                        const b = data[i + 2];
+                        const a = data[i + 3];
+                        
+                        if (a > 0 && (r < 250 || g < 250 || b < 250)) {
+                            nonWhitePixels++;
+                            if (nonWhitePixels > 10) { // Need at least 10 non-white pixels
+                                hasContent = true;
+                                break;
+                            }
+                        }
+                    }
+                    
+                    const dataUrl = canvas.toDataURL('image/png', 1.0);
+                    
+                    if (hasContent) {
+                        console.log('🎉 Successfully captured actual DDC interface content!');
+                        console.log(`📊 Found ${nonWhitePixels}+ non-white pixels`);
+                        this.saveScreenshot(dataUrl);
+                        return; // Success!
+                    } else {
+                        console.log('⚠️ Image captured but appears to be mostly empty/white');
+                        console.log(`📊 Only found ${nonWhitePixels} non-white pixels`);
+                        
+                        // Save it anyway as it might still be useful
+                        this.saveScreenshot(dataUrl);
+                        
+                        // Continue trying other URLs
+                        continue;
+                    }
+                    
+                } catch (canvasError) {
+                    console.log('❌ Canvas drawing failed (likely CORS):', canvasError.message);
+                    
+                    // Create a visual confirmation that we found the image
+                    const visualCanvas = document.createElement('canvas');
+                    const visualCtx = visualCanvas.getContext('2d');
+                    
+                    visualCanvas.width = 800;
+                    visualCanvas.height = 480;
+                    
+                    // Background
+                    visualCtx.fillStyle = '#f0f0f0';
+                    visualCtx.fillRect(0, 0, visualCanvas.width, visualCanvas.height);
+                    
+                    // Success message
+                    visualCtx.fillStyle = '#27ae60';
+                    visualCtx.font = 'bold 20px Arial';
+                    visualCtx.textAlign = 'center';
+                    visualCtx.fillText('✅ DDC4000 Image Found!', visualCanvas.width / 2, 100);
+                    
+                    visualCtx.fillStyle = '#2c3e50';
+                    visualCtx.font = '14px Arial';
+                    visualCtx.fillText(`URL: ${testUrl}`, visualCanvas.width / 2, 140);
+                    visualCtx.fillText(`Size: ${result.width} × ${result.height}`, visualCanvas.width / 2, 160);
+                    visualCtx.fillText(`Time: ${new Date().toLocaleString()}`, visualCanvas.width / 2, 180);
+                    
+                    visualCtx.fillStyle = '#e74c3c';
+                    visualCtx.font = '12px Arial';
+                    visualCtx.fillText('Note: Image found but CORS prevented direct capture', visualCanvas.width / 2, 220);
+                    visualCtx.fillText('The DDC interface is active and serving images', visualCanvas.width / 2, 240);
+                    
+                    // Add instructions
+                    visualCtx.fillStyle = '#3498db';
+                    visualCtx.font = 'bold 14px Arial';
+                    visualCtx.fillText('💡 Manual Capture Options:', visualCanvas.width / 2, 280);
+                    
+                    visualCtx.font = '12px Arial';
+                    visualCtx.fillText('1. Right-click the iframe and select "Save image as..."', visualCanvas.width / 2, 300);
+                    visualCtx.fillText('2. Open DDC in new tab and use browser screenshot', visualCanvas.width / 2, 320);
+                    visualCtx.fillText(`3. Direct image URL: ${testUrl}`, visualCanvas.width / 2, 340);
+                    
+                    const visualDataUrl = visualCanvas.toDataURL();
+                    this.saveScreenshot(visualDataUrl);
+                    console.log('✅ Saved DDC connection confirmation with manual instructions');
+                    return; // Success with manual fallback
+                }
+                
+            } catch (error) {
+                console.log(`❌ Failed to test ${testUrl}:`, error.message);
+                continue; // Try next URL
+            }
+        }
+        
+        throw new Error('No accessible DDC images found at any of the tested endpoints');
+    }
+    
+    async findAndCaptureGif() {
+        try {
+            const iframe = this.websiteFrame;
+            console.log('🔍 Inspecting iframe content for DDC images...');
+            console.log('📍 Iframe URL:', iframe.src);
+            
+            let iframeDoc;
+            try {
+                iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
+            } catch (e) {
+                console.log('❌ Cannot access iframe document due to cross-origin restrictions');
+                throw new Error('Cross-origin iframe access denied');
+            }
+            
+            if (!iframeDoc) {
+                throw new Error('Cannot access iframe document');
+            }
+            
+            console.log('✅ Successfully accessed iframe document');
+            console.log('📄 Document title:', iframeDoc.title || 'No title');
+            console.log('🌐 Document URL:', iframeDoc.URL);
+            
+            // Look for img tags in the iframe
+            const images = iframeDoc.querySelectorAll('img');
+            console.log(`🖼️ Found ${images.length} img elements in iframe`);
+            
+            for (let i = 0; i < images.length; i++) {
+                const img = images[i];
+                console.log(`📸 Image ${i + 1}:`, {
+                    src: img.src,
+                    width: img.width,
+                    height: img.height,
+                    naturalWidth: img.naturalWidth,
+                    naturalHeight: img.naturalHeight,
+                    complete: img.complete
+                });
+                
+                if (img.src && (img.src.includes('.gif') || img.src.includes('image') || img.src.includes('ddcmain') || img.src.includes('ddcdialog'))) {
+                    try {
+                        console.log(`🎯 Attempting to capture DDC image: ${img.src}`);
+                        
+                        // Try to directly copy the image if it's loaded
+                        if (img.complete && img.naturalWidth > 0) {
+                            console.log('📸 Image is already loaded, creating canvas copy...');
+                            
+                            const canvas = document.createElement('canvas');
+                            const ctx = canvas.getContext('2d');
+                            
+                            canvas.width = img.naturalWidth;
+                            canvas.height = img.naturalHeight;
+                            
+                            try {
+                                ctx.drawImage(img, 0, 0);
+                                const dataUrl = canvas.toDataURL('image/png', 1.0);
+                                
+                                // Check for content
+                                const imageData = ctx.getImageData(0, 0, Math.min(canvas.width, 50), Math.min(canvas.height, 50));
+                                const data = imageData.data;
+                                
+                                let nonWhitePixels = 0;
+                                for (let j = 0; j < data.length; j += 4) {
+                                    const r = data[j];
+                                    const g = data[j + 1];
+                                    const b = data[j + 2];
+                                    const a = data[j + 3];
+                                    
+                                    if (a > 0 && (r < 250 || g < 250 || b < 250)) {
+                                        nonWhitePixels++;
+                                    }
+                                }
+                                
+                                if (nonWhitePixels > 5) {
+                                    console.log('✅ Successfully captured DDC image with content!');
+                                    console.log(`📊 Found ${nonWhitePixels} non-white pixels`);
+                                    this.saveScreenshot(dataUrl);
+                                    return;
+                                } else {
+                                    console.log('⚠️ Image captured but appears mostly empty');
+                                }
+                                
+                            } catch (canvasError) {
+                                console.log('❌ Canvas draw failed (CORS):', canvasError.message);
+                            }
+                        }
+                        
+                        // If direct copy failed, try fetching the image
+                        console.log('🌐 Attempting to fetch image via network...');
+                        const response = await fetch(img.src, {
+                            mode: 'no-cors',
+                            cache: 'no-cache'
+                        });
+                        
+                        console.log('📡 Fetch response received, trying to load as image...');
+                        
+                        // Load the fetched URL as an image
+                        const fetchedImg = new Image();
+                        fetchedImg.crossOrigin = 'anonymous';
+                        
+                        const result = await new Promise((resolve, reject) => {
+                            const timeout = setTimeout(() => {
+                                reject(new Error('Timeout loading fetched image'));
+                            }, 3000);
+                            
+                            fetchedImg.onload = () => {
+                                clearTimeout(timeout);
+                                resolve(fetchedImg);
+                            };
+                            
+                            fetchedImg.onerror = () => {
+                                clearTimeout(timeout);
+                                reject(new Error('Failed to load fetched image'));
+                            };
+                            
+                            fetchedImg.src = img.src;
+                        });
+                        
+                        // Create canvas and capture
+                        const canvas = document.createElement('canvas');
+                        const ctx = canvas.getContext('2d');
+                        
+                        canvas.width = result.naturalWidth || result.width;
+                        canvas.height = result.naturalHeight || result.height;
+                        
+                        ctx.drawImage(result, 0, 0);
+                        const dataUrl = canvas.toDataURL('image/png', 1.0);
+                        
+                        this.saveScreenshot(dataUrl);
+                        console.log('✅ Successfully captured image from iframe via fetch');
+                        return;
+                        
+                    } catch (e) {
+                        console.log(`❌ Failed to capture image ${img.src}:`, e.message);
+                    }
+                }
+            }
+            
+            // Look for other potential image sources
+            console.log('🔍 Searching for other image sources in iframe...');
+            
+            // Check for frames within frames
+            const frames = iframeDoc.querySelectorAll('iframe, frame');
+            console.log(`🖼️ Found ${frames.length} nested frames`);
+            
+            for (let i = 0; i < frames.length; i++) {
+                const frame = frames[i];
+                console.log(`📺 Frame ${i + 1}:`, frame.src);
+                
+                if (frame.src && (frame.src.includes('.gif') || frame.src.includes('image'))) {
+                    console.log('🎯 Found potential image frame, testing as direct image...');
+                    
+                    try {
+                        const img = new Image();
+                        img.crossOrigin = 'anonymous';
+                        
+                        const result = await new Promise((resolve, reject) => {
+                            const timeout = setTimeout(() => {
+                                reject(new Error('Timeout loading frame as image'));
+                            }, 3000);
+                            
+                            img.onload = () => {
+                                clearTimeout(timeout);
+                                resolve(img);
+                            };
+                            
+                            img.onerror = () => {
+                                clearTimeout(timeout);
+                                reject(new Error('Frame is not an image'));
+                            };
+                            
+                            img.src = frame.src;
+                        });
+                        
+                        const canvas = document.createElement('canvas');
+                        const ctx = canvas.getContext('2d');
+                        
+                        canvas.width = result.naturalWidth || result.width;
+                        canvas.height = result.naturalHeight || result.height;
+                        
+                        ctx.drawImage(result, 0, 0);
+                        const dataUrl = canvas.toDataURL('image/png', 1.0);
+                        
+                        this.saveScreenshot(dataUrl);
+                        console.log('✅ Successfully captured nested frame as image');
+                        return;
+                        
+                    } catch (e) {
+                        console.log(`❌ Frame ${frame.src} is not a direct image:`, e.message);
+                    }
+                }
+            }
+            
+            // Check the entire iframe content type
+            console.log('🔍 Checking if entire iframe is an image...');
+            const iframeSrc = iframe.src;
+            
+            try {
+                const response = await fetch(iframeSrc, {
+                    method: 'HEAD',
+                    mode: 'no-cors'
+                });
+                
+                console.log('📡 Iframe HEAD request completed');
+                
+                // Try to load iframe URL as image
+                const img = new Image();
+                img.crossOrigin = 'anonymous';
+                
+                const result = await new Promise((resolve, reject) => {
+                    const timeout = setTimeout(() => {
+                        reject(new Error('Iframe URL is not a direct image'));
                     }, 3000);
                     
                     img.onload = () => {
                         clearTimeout(timeout);
-                        console.log(`✅ DDC image loaded: ${testUrl} (${img.width}x${img.height})`);
+                        console.log('✅ Iframe URL loaded as image!');
                         resolve(img);
                     };
                     
                     img.onerror = () => {
                         clearTimeout(timeout);
-                        reject(new Error('Failed to load image'));
+                        reject(new Error('Iframe URL is not an image'));
                     };
                     
-                    img.src = testUrl;
+                    img.src = iframeSrc;
                 });
                 
-                // Successfully loaded image, now capture it
-                captureContainer.appendChild(result);
-                
-                // Create canvas to capture the image
                 const canvas = document.createElement('canvas');
                 const ctx = canvas.getContext('2d');
                 
                 canvas.width = result.naturalWidth || result.width;
                 canvas.height = result.naturalHeight || result.height;
                 
-                try {
-                    ctx.drawImage(result, 0, 0);
-                    const dataUrl = canvas.toDataURL();
-                    
-                    // Clean up
-                    document.body.removeChild(captureContainer);
-                    
-                    this.saveScreenshot(dataUrl);
-                    console.log('✅ Successfully captured DDC interface image!');
-                    return;
-                } catch (canvasError) {
-                    console.log('Canvas draw failed (CORS), but image loaded. Trying alternative...');
-                    
-                    // If canvas fails due to CORS, create a visual snapshot with the image
-                    const visualCanvas = document.createElement('canvas');
-                    const visualCtx = visualCanvas.getContext('2d');
-                    
-                    // Set canvas to a standard size
-                    visualCanvas.width = 800;
-                    visualCanvas.height = 480;
-                    
-                    // Create a background
-                    visualCtx.fillStyle = '#f0f0f0';
-                    visualCtx.fillRect(0, 0, visualCanvas.width, visualCanvas.height);
-                    
-                    // Add text about the successful connection
-                    visualCtx.fillStyle = '#2c3e50';
-                    visualCtx.font = 'bold 18px Arial';
-                    visualCtx.textAlign = 'center';
-                    visualCtx.fillText('✅ DDC4000 Interface Active', visualCanvas.width / 2, 100);
-                    
-                    visualCtx.font = '14px Arial';
-                    visualCtx.fillText(`Image URL: ${testUrl}`, visualCanvas.width / 2, 130);
-                    visualCtx.fillText(`Image Size: ${result.width} × ${result.height}`, visualCanvas.width / 2, 150);
-                    visualCtx.fillText(`Timestamp: ${new Date().toLocaleString()}`, visualCanvas.width / 2, 170);
-                    
-                    visualCtx.fillStyle = '#27ae60';
-                    visualCtx.font = '12px Arial';
-                    visualCtx.fillText('Note: DDC interface image loaded successfully but CORS prevented capture', visualCanvas.width / 2, 200);
-                    visualCtx.fillText('The interface is working and displaying content.', visualCanvas.width / 2, 220);
-                    
-                    const visualDataUrl = visualCanvas.toDataURL();
-                    
-                    // Clean up
-                    document.body.removeChild(captureContainer);
-                    
-                    this.saveScreenshot(visualDataUrl);
-                    console.log('✅ Captured DDC connection confirmation');
-                    return;
-                }
-            }
-            
-        } catch (error) {
-            console.log(`Error in DDC capture: ${error.message}`);
-            
-            // Clean up on error
-            if (document.body.contains(captureContainer)) {
-                document.body.removeChild(captureContainer);
-            }
-            
-            throw error;
-        }
-        
-        throw new Error('No DDC images could be loaded');
-    }
-    
-    async findAndCaptureGif() {
-        try {
-            const iframe = this.websiteFrame;
-            const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
-            
-            if (!iframeDoc) {
-                throw new Error('Cannot access iframe document');
-            }
-            
-            // Look for img tags in the iframe
-            const images = iframeDoc.querySelectorAll('img');
-            
-            for (const img of images) {
-                if (img.src && (img.src.includes('.gif') || img.src.includes('image'))) {
-                    try {
-                        console.log(`Found image: ${img.src}`);
-                        const response = await fetch(img.src);
-                        
-                        if (response.ok) {
-                            const blob = await response.blob();
-                            const dataUrl = await this.blobToDataUrl(blob);
-                            this.saveScreenshot(dataUrl);
-                            console.log('✅ Successfully captured image from iframe');
-                            return;
-                        }
-                    } catch (e) {
-                        console.log(`Failed to fetch image ${img.src}:`, e.message);
-                    }
-                }
-            }
-            
-            // If no img tags, the iframe content itself might be an image
-            const bodyContent = iframeDoc.body?.innerHTML || '';
-            if (bodyContent.trim() === '' || bodyContent.includes('image')) {
-                // The iframe might be displaying an image directly
-                const iframeSrc = iframe.src;
-                const response = await fetch(iframeSrc);
+                ctx.drawImage(result, 0, 0);
+                const dataUrl = canvas.toDataURL('image/png', 1.0);
                 
-                if (response.ok && response.headers.get('content-type')?.includes('image')) {
-                    const blob = await response.blob();
-                    const dataUrl = await this.blobToDataUrl(blob);
-                    this.saveScreenshot(dataUrl);
-                    console.log('✅ Successfully captured iframe as image');
-                    return;
-                }
+                this.saveScreenshot(dataUrl);
+                console.log('✅ Successfully captured entire iframe as image');
+                return;
+                
+            } catch (e) {
+                console.log('❌ Iframe is not a direct image:', e.message);
             }
             
-            throw new Error('No images found in iframe');
+            // Final fallback - inspect HTML content for clues
+            const bodyContent = iframeDoc.body?.innerHTML || '';
+            console.log('📄 Iframe body content length:', bodyContent.length);
+            console.log('📄 Iframe body preview:', bodyContent.substring(0, 200));
+            
+            throw new Error('No accessible images found in iframe content');
             
         } catch (e) {
+            console.log('❌ Iframe inspection failed:', e.message);
             throw new Error('Cannot search iframe content: ' + e.message);
         }
     }
@@ -924,28 +2364,102 @@ class DDCBrowser {
             });
         }
         
+        console.log('🎯 Starting html2canvas capture of iframe container...');
+        
         // Capture the iframe container which should include the iframe itself
         const iframeContainer = this.iframeContainer;
         
         const canvas = await html2canvas(iframeContainer, {
-            useCORS: true,
+            useCORS: false, // Don't use CORS to avoid blocking
             allowTaint: true,
-            scale: 1,
-            logging: false,
+            scale: 2, // Higher quality
+            logging: true, // Enable logging to see what's happening
+            width: iframeContainer.offsetWidth,
+            height: iframeContainer.offsetHeight,
+            backgroundColor: '#ffffff',
             ignoreElements: (element) => {
                 // Don't ignore the iframe itself
                 return false;
             },
             onclone: (clonedDoc) => {
-                // Try to access the iframe in the cloned document
+                console.log('📋 Document cloned for html2canvas');
                 const clonedIframe = clonedDoc.querySelector('#websiteFrame');
                 if (clonedIframe) {
-                    console.log('Found iframe in cloned document');
+                    console.log('🖼️ Found iframe in cloned document:', clonedIframe.src);
+                    console.log('📐 Iframe dimensions:', clonedIframe.offsetWidth, 'x', clonedIframe.offsetHeight);
+                    
+                    // Try to ensure the iframe is visible in the clone
+                    clonedIframe.style.display = 'block';
+                    clonedIframe.style.visibility = 'visible';
+                    clonedIframe.style.opacity = '1';
                 }
+                
+                // Also log any images found in the clone
+                const images = clonedDoc.querySelectorAll('img');
+                console.log('🖼️ Found', images.length, 'images in cloned document');
+                images.forEach((img, index) => {
+                    console.log(`Image ${index}:`, img.src, `(${img.width}x${img.height})`);
+                });
             }
         });
         
-        this.saveScreenshot(canvas.toDataURL());
+        console.log('✅ html2canvas completed. Canvas size:', canvas.width, 'x', canvas.height);
+        
+        // Check if the canvas has actual content (not just white/empty)
+        const ctx = canvas.getContext('2d');
+        
+        // Sample multiple areas of the canvas for better detection
+        const sampleAreas = [
+            { x: 0, y: 0, width: 100, height: 100 }, // Top-left
+            { x: Math.floor(canvas.width / 2) - 50, y: Math.floor(canvas.height / 2) - 50, width: 100, height: 100 }, // Center
+            { x: canvas.width - 100, y: canvas.height - 100, width: 100, height: 100 } // Bottom-right
+        ];
+        
+        let totalNonWhitePixels = 0;
+        let totalPixelsSampled = 0;
+        
+        for (const area of sampleAreas) {
+            const x = Math.max(0, area.x);
+            const y = Math.max(0, area.y);
+            const w = Math.min(area.width, canvas.width - x);
+            const h = Math.min(area.height, canvas.height - y);
+            
+            if (w > 0 && h > 0) {
+                const imageData = ctx.getImageData(x, y, w, h);
+                const data = imageData.data;
+                
+                for (let i = 0; i < data.length; i += 4) {
+                    const r = data[i];
+                    const g = data[i + 1];
+                    const b = data[i + 2];
+                    const a = data[i + 3];
+                    
+                    totalPixelsSampled++;
+                    
+                    // Count pixels that aren't white/light gray (more lenient threshold)
+                    if (a > 0 && (r < 250 || g < 250 || b < 250)) {
+                        totalNonWhitePixels++;
+                    }
+                }
+            }
+        }
+        
+        const contentPercentage = totalPixelsSampled > 0 ? (totalNonWhitePixels / totalPixelsSampled) * 100 : 0;
+        const hasContent = contentPercentage > 2; // If more than 2% of pixels have content
+        
+        console.log('📊 Canvas content analysis:');
+        console.log(`   - Canvas size: ${canvas.width} × ${canvas.height}`);
+        console.log(`   - Non-white pixels: ${totalNonWhitePixels} / ${totalPixelsSampled} (${contentPercentage.toFixed(1)}%)`);
+        console.log(`   - Result: ${hasContent ? 'HAS CONTENT' : 'MOSTLY EMPTY/WHITE'}`);
+        
+        const dataUrl = canvas.toDataURL('image/png', 1.0);
+        this.saveScreenshot(dataUrl);
+        
+        if (hasContent) {
+            console.log('🎉 Successfully captured iframe content with html2canvas!');
+        } else {
+            console.log('⚠️ html2canvas captured mostly empty content');
+        }
     }
     
     async captureIframeAsCanvas() {
@@ -1078,6 +2592,10 @@ class DDCBrowser {
     }
     
     saveScreenshot(dataUrl) {
+        console.log('💾 Saving screenshot...');
+        console.log('📊 Data URL length:', dataUrl.length);
+        console.log('🔍 Data URL preview:', dataUrl.substring(0, 100) + '...');
+        
         const screenshot = {
             id: Date.now(),
             timestamp: new Date().toISOString(),
@@ -1088,6 +2606,12 @@ class DDCBrowser {
             protocol: this.protocolSelect.value
         };
         
+        console.log('📝 Screenshot object created:', {
+            id: screenshot.id,
+            device: screenshot.device,
+            dataUrlLength: screenshot.dataUrl.length
+        });
+        
         this.screenshots.unshift(screenshot);
         
         // Keep only last 50 screenshots to prevent storage overflow
@@ -1097,6 +2621,8 @@ class DDCBrowser {
         
         this.saveScreenshots();
         this.updateGalleryDisplay();
+        
+        console.log('✅ Screenshot saved to gallery. Total screenshots:', this.screenshots.length);
         
         // Show success message
         this.showSuccess(`Screenshot captured! (${this.screenshots.length} total)`);
@@ -1202,33 +2728,48 @@ class DDCBrowser {
             return;
         }
         
-        this.galleryGrid.innerHTML = this.screenshots.map(screenshot => `
-            <div class="gallery-item">
-                <img src="${screenshot.dataUrl}" alt="Screenshot" class="gallery-image" 
-                     onclick="ddcBrowser.inspectImage(${screenshot.id})" 
-                     title="Click to inspect">
-                <div class="gallery-info">
-                    <div class="gallery-timestamp">
-                        ${new Date(screenshot.timestamp).toLocaleString()}
-                    </div>
-                    <div class="gallery-details">
-                        <span>${screenshot.device}</span>
-                        <span>${screenshot.resolution} @ ${Math.round(screenshot.zoom * 100)}%</span>
-                    </div>
-                    <div class="gallery-actions">
-                        <button class="gallery-btn" onclick="ddcBrowser.inspectImage(${screenshot.id})" title="Inspect">
-                            🔍
-                        </button>
-                        <button class="gallery-btn download" onclick="ddcBrowser.downloadScreenshot(${screenshot.id})">
-                            💾
-                        </button>
-                        <button class="gallery-btn delete" onclick="ddcBrowser.deleteScreenshot(${screenshot.id})">
-                            🗑️
-                        </button>
+        console.log('🖼️ Updating gallery display with', this.screenshots.length, 'screenshots');
+        
+        this.galleryGrid.innerHTML = this.screenshots.map((screenshot, index) => {
+            console.log(`Screenshot ${index}:`, {
+                id: screenshot.id,
+                device: screenshot.device,
+                dataUrlLength: screenshot.dataUrl ? screenshot.dataUrl.length : 'undefined',
+                dataUrlPreview: screenshot.dataUrl ? screenshot.dataUrl.substring(0, 50) + '...' : 'undefined'
+            });
+            
+            return `
+                <div class="gallery-item">
+                    <img src="${screenshot.dataUrl}" alt="Screenshot" class="gallery-image" 
+                         onclick="ddcBrowser.inspectImage(${screenshot.id})" 
+                         title="Click to inspect"
+                         onload="console.log('✅ Gallery image ${screenshot.id} loaded successfully')"
+                         onerror="console.log('❌ Gallery image ${screenshot.id} failed to load')">
+                    <div class="gallery-info">
+                        <div class="gallery-timestamp">
+                            ${new Date(screenshot.timestamp).toLocaleString()}
+                        </div>
+                        <div class="gallery-details">
+                            <span>${screenshot.device}</span>
+                            <span>${screenshot.resolution} @ ${Math.round(screenshot.zoom * 100)}%</span>
+                        </div>
+                        <div class="gallery-actions">
+                            <button class="gallery-btn" onclick="ddcBrowser.inspectImage(${screenshot.id})" title="Inspect">
+                                🔍
+                            </button>
+                            <button class="gallery-btn download" onclick="ddcBrowser.downloadScreenshot(${screenshot.id})">
+                                💾
+                            </button>
+                            <button class="gallery-btn delete" onclick="ddcBrowser.deleteScreenshot(${screenshot.id})">
+                                🗑️
+                            </button>
+                        </div>
                     </div>
                 </div>
-            </div>
-        `).join('');
+            `;
+        }).join('');
+        
+        console.log('✅ Gallery HTML updated');
     }
     
     downloadScreenshot(id) {

@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>iframe2image Demo</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .iframe-section {
+            margin: 20px 0;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        iframe {
+            width: 100%;
+            height: 400px;
+            border: none;
+            display: block;
+        }
+        .controls {
+            margin: 20px 0;
+            text-align: center;
+        }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            cursor: pointer;
+            margin: 0 10px;
+            font-size: 16px;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        .log {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 6px;
+            padding: 15px;
+            margin: 20px 0;
+            max-height: 300px;
+            overflow-y: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+        }
+        .result {
+            margin: 20px 0;
+            text-align: center;
+        }
+        .result img {
+            max-width: 100%;
+            border: 2px solid #28a745;
+            border-radius: 8px;
+        }
+        .status {
+            padding: 10px;
+            border-radius: 6px;
+            margin: 10px 0;
+            font-weight: bold;
+        }
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f1b0b7;
+        }
+        .status.info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #b6d7e0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🖼️ iframe2image Demo & Test</h1>
+        <p>Testing iframe2image library with different content types</p>
+
+        <!-- Test iframe with simple content -->
+        <h2>Test 1: Simple HTML Content</h2>
+        <div class="iframe-section">
+            <iframe id="simpleFrame" src="simple.html"></iframe>
+        </div>
+        <div class="controls">
+            <button onclick="captureIframe('simpleFrame')">📷 Capture Simple iframe</button>
+        </div>
+
+        <!-- Test iframe with external content -->
+        <h2>Test 2: External Website</h2>
+        <div class="iframe-section">
+            <iframe id="externalFrame" src="https://httpbin.org/html"></iframe>
+        </div>
+        <div class="controls">
+            <button onclick="captureIframe('externalFrame')">📷 Capture External iframe</button>
+        </div>
+
+        <!-- Test iframe with DDC4000 (if available) -->
+        <h2>Test 3: DDC4000 Interface</h2>
+        <div class="iframe-section">
+            <iframe id="ddcFrame" src="about:blank"></iframe>
+        </div>
+        <div class="controls">
+            <input type="text" id="ddcUrl" placeholder="Enter DDC4000 URL" style="padding: 8px; width: 300px; margin-right: 10px;">
+            <button onclick="loadDdcFrame()">🔗 Load DDC</button>
+            <button onclick="captureIframe('ddcFrame')">📷 Capture DDC iframe</button>
+        </div>
+
+        <!-- Status and logs -->
+        <div id="status"></div>
+        <div class="log" id="log"></div>
+        
+        <!-- Results -->
+        <div class="result" id="result"></div>
+    </div>
+
+    <!-- Load domvas (required dependency) -->
+    <script src="domvas.js"></script>
+    <!-- Load iframe2image library locally -->
+    <script src="iframe2image.js"></script>
+    
+    <script>
+        function log(message) {
+            const timestamp = new Date().toLocaleTimeString();
+            const logDiv = document.getElementById('log');
+            logDiv.innerHTML += `[${timestamp}] ${message}\n`;
+            logDiv.scrollTop = logDiv.scrollHeight;
+            console.log(message);
+        }
+
+        function setStatus(message, type = 'info') {
+            const statusDiv = document.getElementById('status');
+            statusDiv.innerHTML = `<div class="status ${type}">${message}</div>`;
+        }
+
+        function showResult(dataUrl, message) {
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = `
+                <h3>${message}</h3>
+                <img src="${dataUrl}" alt="Captured Screenshot">
+                <p>Data URL length: ${dataUrl.length} characters</p>
+            `;
+        }
+
+        function loadDdcFrame() {
+            const url = document.getElementById('ddcUrl').value.trim();
+            if (!url) {
+                setStatus('Please enter a DDC4000 URL', 'error');
+                return;
+            }
+            
+            const iframe = document.getElementById('ddcFrame');
+            iframe.src = url;
+            setStatus(`Loading DDC4000 interface: ${url}`, 'info');
+            log(`Loading DDC frame: ${url}`);
+        }
+
+        async function captureIframe(iframeId) {
+            const iframe = document.getElementById(iframeId);
+            
+            if (!iframe.src || iframe.src === 'about:blank') {
+                setStatus('iframe has no content to capture', 'error');
+                log(`Error: iframe ${iframeId} has no src`);
+                return;
+            }
+
+            setStatus('🔄 Capturing iframe...', 'info');
+            log(`Starting capture of iframe: ${iframeId}`);
+            log(`iframe src: ${iframe.src}`);
+            log(`iframe dimensions: ${iframe.offsetWidth} x ${iframe.offsetHeight}`);
+
+            // Check if iframe2image is loaded
+            if (typeof iframe2image === 'undefined') {
+                setStatus('❌ iframe2image library not loaded', 'error');
+                log('Error: iframe2image library not found');
+                return;
+            }
+
+            // Check if domvas is loaded
+            if (typeof domvas === 'undefined') {
+                setStatus('❌ domvas library not loaded', 'error');
+                log('Error: domvas library not found');
+                return;
+            }
+
+            log('✅ iframe2image and domvas libraries loaded');
+
+            try {
+                log('🎯 Calling iframe2image...');
+                
+                // iframe2image expects (iframe, callback)
+                iframe2image(iframe, (error, image) => {
+                    if (error) {
+                        setStatus(`❌ Capture failed: ${error.message}`, 'error');
+                        log(`Error: ${error.message}`);
+                        return;
+                    }
+
+                    if (!image) {
+                        setStatus('❌ No image returned', 'error');
+                        log('Error: iframe2image returned no image');
+                        return;
+                    }
+
+                    log(`✅ Success! Image created: ${image.width} x ${image.height}`);
+                    log(`Image type: ${image.constructor.name}`);
+                    
+                    // Check if it's an Image element and convert to canvas for analysis
+                    let canvas, ctx, dataUrl;
+                    
+                    if (image instanceof HTMLImageElement) {
+                        log('📷 Converting Image to Canvas for analysis...');
+                        canvas = document.createElement('canvas');
+                        ctx = canvas.getContext('2d');
+                        canvas.width = image.naturalWidth || image.width;
+                        canvas.height = image.naturalHeight || image.height;
+                        
+                        try {
+                            ctx.drawImage(image, 0, 0);
+                            dataUrl = canvas.toDataURL('image/png', 1.0);
+                        } catch (drawError) {
+                            log(`❌ Failed to draw image to canvas: ${drawError.message}`);
+                            // Use the image src as fallback
+                            dataUrl = image.src;
+                        }
+                    } else if (image.getContext) {
+                        log('🎨 Using Canvas directly...');
+                        canvas = image;
+                        ctx = canvas.getContext('2d');
+                        dataUrl = canvas.toDataURL('image/png', 1.0);
+                    } else {
+                        log(`❌ Unknown image type: ${typeof image}`);
+                        setStatus('❌ Unknown image type returned', 'error');
+                        return;
+                    }
+                    
+                    // Check if canvas has content
+                    if (ctx) {
+                        const imageData = ctx.getImageData(0, 0, Math.min(canvas.width, 50), Math.min(canvas.height, 50));
+                        const data = imageData.data;
+                        
+                        let nonWhitePixels = 0;
+                        for (let i = 0; i < data.length; i += 4) {
+                            const r = data[i];
+                            const g = data[i + 1];
+                            const b = data[i + 2];
+                            const a = data[i + 3];
+                            
+                            if (a > 0 && (r < 250 || g < 250 || b < 250)) {
+                                nonWhitePixels++;
+                            }
+                        }
+                        
+                        log(`📊 Content analysis: ${nonWhitePixels} non-white pixels`);
+                        
+                        if (nonWhitePixels > 10) {
+                            setStatus('🎉 Successfully captured iframe with content!', 'success');
+                            showResult(dataUrl, `✅ Captured ${iframeId} successfully`);
+                        } else {
+                            setStatus('⚠️ Captured iframe but appears mostly empty', 'error');
+                            showResult(dataUrl, `⚠️ Captured ${iframeId} (mostly empty)`);
+                        }
+                    } else {
+                        // Fallback for non-canvas results
+                        setStatus('✅ Captured iframe (cannot analyze content)', 'success');
+                        showResult(dataUrl, `✅ Captured ${iframeId}`);
+                    }
+                });
+
+            } catch (syncError) {
+                setStatus(`❌ Sync error: ${syncError.message}`, 'error');
+                log(`Sync error: ${syncError.message}`);
+            }
+        }
+
+        // Initialize
+        window.onload = function() {
+            log('🚀 iframe2image Demo loaded');
+            setStatus('Ready to test iframe capture', 'info');
+            
+            // Check if iframe2image is available
+            if (typeof iframe2image !== 'undefined') {
+                log('✅ iframe2image library available');
+            } else {
+                log('❌ iframe2image library not loaded');
+                setStatus('❌ iframe2image library failed to load', 'error');
+            }
+        };
+    </script>
+</body>
+</html>

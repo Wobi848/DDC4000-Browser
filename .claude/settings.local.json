@@ -5,7 +5,8 @@
       "WebFetch(domain:192.168.10.21)",
       "Bash(mkdir:*)",
       "Bash(move:*)",
-      "Bash(mv:*)"
+      "Bash(mv:*)",
+      "Bash(curl:*)"
     ],
     "deny": []
   }
