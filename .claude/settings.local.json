@@ -6,7 +6,9 @@
       "Bash(mkdir:*)",
       "Bash(move:*)",
       "Bash(mv:*)",
-      "Bash(curl:*)"
+      "Bash(curl:*)",
+      "Bash(python:*)",
+      "Bash(rg:*)"
     ],
     "deny": []
   }

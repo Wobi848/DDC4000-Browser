@@ -117,15 +117,15 @@
             <button onclick="captureIframe('externalFrame')">📷 Capture External iframe</button>
         </div>
 
-        <!-- Test iframe with DDC4000 (if available) -->
+        <!-- Test iframe with DDC4000 (hardcoded) -->
         <h2>Test 3: DDC4000 Interface</h2>
         <div class="iframe-section">
-            <iframe id="ddcFrame" src="about:blank"></iframe>
+            <iframe id="ddcFrame" src="http://192.168.10.21/ddcdialog.html?useOvl=1&busyReload=1&type=WVGA"></iframe>
         </div>
         <div class="controls">
-            <input type="text" id="ddcUrl" placeholder="Enter DDC4000 URL" style="padding: 8px; width: 300px; margin-right: 10px;">
-            <button onclick="loadDdcFrame()">🔗 Load DDC</button>
             <button onclick="captureIframe('ddcFrame')">📷 Capture DDC iframe</button>
+            <button onclick="reloadDdcFrame()">🔄 Reload DDC</button>
+            <button onclick="capturePageArea()">📸 Capture Page Area (html2canvas)</button>
         </div>
 
         <!-- Status and logs -->
@@ -140,6 +140,8 @@
     <script src="domvas.js"></script>
     <!-- Load iframe2image library locally -->
     <script src="iframe2image.js"></script>
+    <!-- Load html2canvas for page area capture -->
+    <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
     
     <script>
         function log(message) {
@@ -164,17 +166,12 @@
             `;
         }
 
-        function loadDdcFrame() {
-            const url = document.getElementById('ddcUrl').value.trim();
-            if (!url) {
-                setStatus('Please enter a DDC4000 URL', 'error');
-                return;
-            }
-            
+        function reloadDdcFrame() {
             const iframe = document.getElementById('ddcFrame');
+            const url = 'http://192.168.10.21/ddcdialog.html?useOvl=1&busyReload=1&type=WVGA&_t=' + Date.now();
             iframe.src = url;
-            setStatus(`Loading DDC4000 interface: ${url}`, 'info');
-            log(`Loading DDC frame: ${url}`);
+            setStatus(`Reloading DDC4000 interface: ${url}`, 'info');
+            log(`Reloading DDC frame: ${url}`);
         }
 
         async function captureIframe(iframeId) {
@@ -292,6 +289,71 @@
             } catch (syncError) {
                 setStatus(`❌ Sync error: ${syncError.message}`, 'error');
                 log(`Sync error: ${syncError.message}`);
+            }
+        }
+
+        async function capturePageArea() {
+            setStatus('🔄 Capturing page area with html2canvas...', 'info');
+            log('Starting html2canvas capture of page area containing DDC iframe...');
+            
+            try {
+                const iframe = document.getElementById('ddcFrame');
+                const iframeSection = iframe.parentElement;
+                
+                log(`Target element: ${iframeSection.className}`);
+                log(`iframe dimensions: ${iframe.offsetWidth} x ${iframe.offsetHeight}`);
+                
+                const canvas = await html2canvas(iframeSection, {
+                    useCORS: false,
+                    allowTaint: true,
+                    scale: 1,
+                    logging: true,
+                    backgroundColor: '#ffffff',
+                    onclone: (clonedDoc) => {
+                        log('📋 Document cloned for html2canvas');
+                        const clonedIframe = clonedDoc.querySelector('#ddcFrame');
+                        if (clonedIframe) {
+                            log('🖼️ Found DDC iframe in cloned document');
+                            log(`   src: ${clonedIframe.src}`);
+                            clonedIframe.style.border = '3px solid red';
+                        }
+                    }
+                });
+                
+                log(`✅ html2canvas completed. Canvas: ${canvas.width} x ${canvas.height}`);
+                
+                const dataUrl = canvas.toDataURL('image/png', 1.0);
+                
+                // Analyze content
+                const ctx = canvas.getContext('2d');
+                const imageData = ctx.getImageData(0, 0, Math.min(canvas.width, 100), Math.min(canvas.height, 100));
+                const data = imageData.data;
+                
+                let nonWhitePixels = 0;
+                for (let i = 0; i < data.length; i += 4) {
+                    const r = data[i];
+                    const g = data[i + 1];
+                    const b = data[i + 2];
+                    const a = data[i + 3];
+                    
+                    if (a > 0 && (r < 250 || g < 250 || b < 250)) {
+                        nonWhitePixels++;
+                    }
+                }
+                
+                log(`📊 html2canvas content analysis: ${nonWhitePixels} non-white pixels`);
+                
+                if (nonWhitePixels > 50) {
+                    setStatus('🎉 html2canvas captured content successfully!', 'success');
+                    showResult(dataUrl, '✅ html2canvas Page Area Capture');
+                } else {
+                    setStatus('⚠️ html2canvas captured mostly empty content', 'error');
+                    showResult(dataUrl, '⚠️ html2canvas (mostly empty)');
+                }
+                
+            } catch (error) {
+                setStatus(`❌ html2canvas failed: ${error.message}`, 'error');
+                log(`html2canvas error: ${error.message}`);
             }
         }
 
