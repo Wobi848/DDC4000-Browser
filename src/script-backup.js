@@ -700,6 +700,11 @@ class DDCBrowser {
                 text: '📱 Simple Canvas Capture',
                 description: 'Try basic iframe area capture',
                 action: () => this.simpleIframeCapture()
+            },
+            {
+                text: '🎯 Iframe-Focused Capture',
+                description: 'Screen capture with iframe highlighting',
+                action: () => this.captureViaScreenShare()
             }
         ];
 
@@ -1549,8 +1554,9 @@ class DDCBrowser {
         console.log('🎥 Starting screen sharing capture...');
         console.log('📢 User will be prompted to select what to capture');
         
-        // Show instructions to user
+        // Show instructions to user and highlight iframe
         this.showScreenShareInstructions();
+        this.highlightIframeForCapture();
         
         try {
             // Request screen sharing with user selection
@@ -1582,9 +1588,9 @@ class DDCBrowser {
                 video.onloadedmetadata = () => {
                     console.log(`📺 Video loaded: ${video.videoWidth}x${video.videoHeight}`);
                     
-                    // Auto-capture after a short delay to let user position
+                    // Auto-capture with crop after a short delay to let user position
                     setTimeout(() => {
-                        this.captureFromVideoStream(video, stream);
+                        this.captureFromVideoStream(video, stream, true);
                         resolve();
                     }, 2000);
                 };
@@ -1714,6 +1720,47 @@ class DDCBrowser {
         }
     }
     
+    highlightIframeForCapture() {
+        // Add a visual highlight around the iframe to help with manual cropping
+        const highlight = document.createElement('div');
+        highlight.id = 'iframeHighlight';
+        highlight.style.cssText = `
+            position: absolute;
+            border: 3px solid #e74c3c;
+            border-radius: 8px;
+            pointer-events: none;
+            z-index: 2000;
+            box-shadow: 0 0 20px rgba(231, 76, 60, 0.5);
+            animation: pulse 2s infinite;
+        `;
+        
+        // Position over iframe
+        const iframe = this.websiteFrame;
+        const rect = iframe.getBoundingClientRect();
+        highlight.style.left = rect.left + 'px';
+        highlight.style.top = rect.top + 'px';
+        highlight.style.width = rect.width + 'px';
+        highlight.style.height = rect.height + 'px';
+        
+        // Add pulse animation
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes pulse {
+                0% { opacity: 0.7; transform: scale(1); }
+                50% { opacity: 1; transform: scale(1.02); }
+                100% { opacity: 0.7; transform: scale(1); }
+            }
+        `;
+        document.head.appendChild(style);
+        document.body.appendChild(highlight);
+        
+        // Remove highlight after screen sharing ends
+        setTimeout(() => {
+            if (highlight.parentNode) highlight.remove();
+            if (style.parentNode) style.remove();
+        }, 10000);
+    }
+    
     showScreenShareInstructions() {
         // Create modal with instructions
         const modal = document.createElement('div');
@@ -1733,16 +1780,19 @@ class DDCBrowser {
         
         modal.innerHTML = `
             <div style="background: white; padding: 30px; border-radius: 12px; max-width: 500px; text-align: center;">
-                <h2 style="color: #2c3e50; margin-bottom: 20px;">📷 Screen Capture</h2>
-                <div style="font-size: 48px; margin-bottom: 20px;">🖥️</div>
-                <p style="margin-bottom: 15px;">You'll be prompted to select what to capture:</p>
+                <h2 style="color: #2c3e50; margin-bottom: 20px;">📷 Iframe Screenshot</h2>
+                <div style="font-size: 48px; margin-bottom: 20px;">🎯</div>
+                <p style="margin-bottom: 15px;"><strong>Red border shows iframe area to capture!</strong></p>
                 <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; margin: 15px 0; text-align: left;">
-                    <strong>Best options:</strong><br>
-                    🖥️ <strong>Entire Screen</strong> - Captures everything<br>
-                    🪟 <strong>Application Window</strong> - Captures just the browser<br>
-                    📱 <strong>Browser Tab</strong> - Captures this tab only
+                    <strong>Recommended:</strong><br>
+                    📱 <strong>Browser Tab</strong> - Best for cropping to iframe<br>
+                    🪟 <strong>Application Window</strong> - Shows full browser<br>
+                    🖥️ <strong>Entire Screen</strong> - Captures everything
                 </div>
-                <p style="color: #666; font-size: 12px;">After selection, a screenshot will be taken automatically</p>
+                <div style="background: #e8f4f8; padding: 10px; border-radius: 8px; margin: 15px 0; border-left: 4px solid #3498db;">
+                    💡 <strong>Tip:</strong> After capture, you can crop the image to focus on just the DDC interface area highlighted in red!
+                </div>
+                <p style="color: #666; font-size: 12px;">Screenshot taken automatically after selection</p>
                 <div style="margin-top: 20px;">
                     <div class="spinner" style="border: 3px solid #f3f3f3; border-top: 3px solid #3498db; border-radius: 50%; width: 30px; height: 30px; animation: spin 1s linear infinite; margin: 0 auto;"></div>
                     <p style="margin-top: 10px; color: #666;">Waiting for screen selection...</p>
@@ -1791,7 +1841,10 @@ class DDCBrowser {
             <p style="margin-bottom: 15px; color: #666;">Capturing: <span id="captureSource">Screen/Window</span></p>
             <div style="display: flex; gap: 10px; margin-bottom: 15px;">
                 <button id="captureNowBtn" style="flex: 1; padding: 10px; background: #27ae60; color: white; border: none; border-radius: 6px; cursor: pointer;">
-                    📷 Capture Now
+                    📷 Capture Full
+                </button>
+                <button id="cropCaptureBtn" style="flex: 1; padding: 10px; background: #3498db; color: white; border: none; border-radius: 6px; cursor: pointer;">
+                    🎯 Crop to Iframe
                 </button>
                 <button id="stopCaptureBtn" style="flex: 1; padding: 10px; background: #e74c3c; color: white; border: none; border-radius: 6px; cursor: pointer;">
                     ❌ Stop
@@ -1804,7 +1857,11 @@ class DDCBrowser {
         
         // Add event listeners
         document.getElementById('captureNowBtn').onclick = () => {
-            this.captureFromVideoStream(video, stream);
+            this.captureFromVideoStream(video, stream, false);
+        };
+        
+        document.getElementById('cropCaptureBtn').onclick = () => {
+            this.captureFromVideoStream(video, stream, true);
         };
         
         document.getElementById('stopCaptureBtn').onclick = () => {
@@ -1818,7 +1875,7 @@ class DDCBrowser {
         });
     }
     
-    captureFromVideoStream(video, stream) {
+    captureFromVideoStream(video, stream, cropToIframe = false) {
         try {
             console.log('📸 Capturing from video stream...');
             
@@ -1834,25 +1891,85 @@ class DDCBrowser {
             // Draw current video frame to canvas
             ctx.drawImage(video, 0, 0);
             
+            let finalCanvas = canvas;
+            
+            // Auto-crop to iframe if requested
+            if (cropToIframe) {
+                console.log('🎯 Auto-cropping to iframe area...');
+                finalCanvas = this.cropToIframe(canvas);
+            }
+            
             // Convert to data URL
-            const dataUrl = canvas.toDataURL('image/png', 1.0);
+            const dataUrl = finalCanvas.toDataURL('image/png', 1.0);
             
             // Stop the stream
             stream.getTracks().forEach(track => track.stop());
             
-            // Remove interface
+            // Remove interface and highlight
             const captureInterface = document.getElementById('screenCaptureInterface');
             if (captureInterface) captureInterface.remove();
+            
+            const highlight = document.getElementById('iframeHighlight');
+            if (highlight) highlight.remove();
             
             // Save screenshot
             this.saveScreenshot(dataUrl);
             
+            const message = cropToIframe ? 'Screenshot auto-cropped to iframe!' : 'Screenshot captured from screen sharing!';
             console.log('🎉 Screen capture completed successfully!');
-            this.showSuccess('Screenshot captured from screen sharing!');
+            this.showSuccess(message);
             
         } catch (error) {
             console.log('❌ Capture from stream failed:', error);
             this.showError('Failed to capture from video stream');
+        }
+    }
+    
+    cropToIframe(sourceCanvas) {
+        try {
+            // Get iframe position and dimensions
+            const iframe = this.websiteFrame;
+            const iframeRect = iframe.getBoundingClientRect();
+            
+            // Account for page scroll and window position
+            const scrollX = window.pageXOffset || document.documentElement.scrollLeft;
+            const scrollY = window.pageYOffset || document.documentElement.scrollTop;
+            
+            // Use document dimensions instead of window
+            const docWidth = document.documentElement.scrollWidth;
+            const docHeight = document.documentElement.scrollHeight;
+            
+            // Calculate scale factor (screen capture vs document)
+            const scaleX = sourceCanvas.width / docWidth;
+            const scaleY = sourceCanvas.height / docHeight;
+            
+            // Calculate crop area with scroll offset
+            const cropX = Math.max(0, (iframeRect.left + scrollX) * scaleX);
+            const cropY = Math.max(0, (iframeRect.top + scrollY) * scaleY);
+            const cropWidth = Math.min(sourceCanvas.width - cropX, iframeRect.width * scaleX);
+            const cropHeight = Math.min(sourceCanvas.height - cropY, iframeRect.height * scaleY);
+            
+            console.log(`🎯 Crop area: ${cropX}, ${cropY}, ${cropWidth}x${cropHeight}`);
+            
+            // Create cropped canvas
+            const croppedCanvas = document.createElement('canvas');
+            const croppedCtx = croppedCanvas.getContext('2d');
+            
+            croppedCanvas.width = cropWidth;
+            croppedCanvas.height = cropHeight;
+            
+            // Draw cropped area
+            croppedCtx.drawImage(
+                sourceCanvas,
+                cropX, cropY, cropWidth, cropHeight,  // Source area
+                0, 0, cropWidth, cropHeight           // Destination area
+            );
+            
+            return croppedCanvas;
+            
+        } catch (error) {
+            console.log('❌ Auto-crop failed, using full image:', error);
+            return sourceCanvas;
         }
     }
     

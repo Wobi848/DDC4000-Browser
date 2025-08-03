@@ -8,7 +8,10 @@
       "Bash(mv:*)",
       "Bash(curl:*)",
       "Bash(python:*)",
-      "Bash(rg:*)"
+      "Bash(rg:*)",
+      "Bash(cp:*)",
+      "Bash(rm:*)",
+      "Bash(grep:*)"
     ],
     "deny": []
   }
