@@ -347,7 +347,7 @@ body {
 .website-frame {
     border: none;
     display: block;
-    transform-origin: top left;
+    transform-origin: center center;
     transition: transform 0.3s ease;
     background-color: white;
     box-shadow: 0 2px 8px rgba(0,0,0,0.1);

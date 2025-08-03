@@ -8,28 +8,7 @@ export class ZoomManager {
 
     setZoom(zoomLevel) {
         this.currentZoom = Math.max(0.25, Math.min(5.0, zoomLevel));
-        const iframe = this.ddcBrowser.websiteFrame;
-        const container = this.ddcBrowser.iframeContainer;
-        
-        // Get iframe dimensions
-        const resolution = this.ddcBrowser.resolutionSelect.value;
-        const baseWidth = resolution === 'QVGA' ? 320 : 800;
-        const baseHeight = resolution === 'QVGA' ? 240 : 480;
-        
-        // Calculate scaled dimensions
-        const scaledWidth = baseWidth * this.currentZoom;
-        const scaledHeight = baseHeight * this.currentZoom;
-        
-        // Calculate centering offset
-        const containerWidth = container.clientWidth;
-        const containerHeight = container.clientHeight;
-        const offsetX = (containerWidth - scaledWidth) / 2;
-        const offsetY = (containerHeight - scaledHeight) / 2;
-        
-        // Apply transform with centering
-        iframe.style.transform = `translate(${offsetX}px, ${offsetY}px) scale(${this.currentZoom})`;
-        iframe.style.transformOrigin = 'top left';
-        
+        this.ddcBrowser.websiteFrame.style.transform = `scale(${this.currentZoom})`;
         this.updateZoomDisplay();
         this.updateFrameSize();
     }
@@ -75,12 +54,6 @@ export class ZoomManager {
         const scaleX = containerWidth / baseWidth;
         const scaleY = containerHeight / baseHeight;
         const optimalScale = Math.min(scaleX, scaleY, 3.0); // Max 3x zoom
-        
-        console.log(`🎯 AutoFit Debug - ${resolution}:`);
-        console.log(`  Base size: ${baseWidth}×${baseHeight}`);
-        console.log(`  Container: ${containerWidth}×${containerHeight}`);
-        console.log(`  Scales: X=${scaleX.toFixed(2)}, Y=${scaleY.toFixed(2)}`);
-        console.log(`  Final scale: ${optimalScale.toFixed(2)}`);
         
         this.setZoom(optimalScale);
         this.ddcBrowser.showSuccess(`Auto-fit applied: ${Math.round(optimalScale * 100)}%`);
