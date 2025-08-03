@@ -98,14 +98,30 @@ self.addEventListener('fetch', (event) => {
   if (requestUrl.pathname.startsWith('/proxy-ddc')) {
     const targetUrl = requestUrl.searchParams.get('url');
     if (targetUrl) {
+      console.log('DDC Proxy attempting to fetch:', targetUrl);
       event.respondWith(
         fetch(targetUrl, {
           mode: 'no-cors',
           credentials: 'omit',
+          cache: 'no-cache',
           headers: {
             'User-Agent': 'DDC4000-Browser/1.0'
           }
         }).then(response => {
+          console.log('DDC Proxy response received:', {
+            status: response.status,
+            statusText: response.statusText,
+            type: response.type,
+            ok: response.ok,
+            headers: [...response.headers.entries()]
+          });
+          
+          // For no-cors mode, we get an opaque response
+          if (response.type === 'opaque') {
+            // We can't read the content, but we can pass it through
+            return response;
+          }
+          
           // Clone the response to read headers
           const responseHeaders = new Headers();
           

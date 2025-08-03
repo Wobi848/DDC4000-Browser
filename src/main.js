@@ -236,13 +236,15 @@ class DDCBrowser {
         const isHttpTarget = protocol === 'http';
         
         if (isHttps && isHttpTarget) {
-            // Use service worker proxy to avoid mixed content issues
-            const proxyUrl = `/proxy-ddc?url=${encodeURIComponent(targetUrl)}`;
+            // Show warning but allow direct connection for now
+            console.warn('Mixed content detected - using direct HTTP connection');
+            this.showMixedContentWarning = true;
             return { 
                 valid: true, 
-                url: proxyUrl,
+                url: targetUrl,
                 originalUrl: targetUrl,
-                proxied: true
+                proxied: false,
+                mixedContent: true
             };
         }
         
@@ -268,9 +270,12 @@ class DDCBrowser {
         }
 
         // Show appropriate connection message
-        const statusMessage = urlResult.proxied 
-            ? 'Connecting via proxy (HTTP→HTTPS)...' 
-            : 'Connecting to DDC4000...';
+        let statusMessage = 'Connecting to DDC4000...';
+        if (urlResult.proxied) {
+            statusMessage = 'Connecting via proxy (HTTP→HTTPS)...';
+        } else if (urlResult.mixedContent) {
+            statusMessage = 'Connecting (mixed content - HTTP over HTTPS)...';
+        }
         
         this.setConnectionStatus('connecting', statusMessage);
         this.showLoading();
@@ -280,6 +285,10 @@ class DDCBrowser {
         
         // Add timestamp to prevent caching issues
         const urlWithTimestamp = this.addTimestampToUrl(urlResult.url);
+        
+        // Set iframe attributes to help with DDC4000 compatibility
+        this.websiteFrame.setAttribute('sandbox', 'allow-same-origin allow-scripts allow-forms allow-popups allow-top-navigation');
+        
         this.websiteFrame.src = urlWithTimestamp;
         
         // Store URL info for success handler
@@ -291,10 +300,27 @@ class DDCBrowser {
         // Set a timeout to detect failed loads
         this.loadTimeout = setTimeout(() => {
             if (this.loadingMessage && !this.loadingMessage.classList.contains('hidden')) {
-                this.setConnectionStatus('error', 'Connection timeout');
-                this.handleLoadError();
+                if (this.currentUrlInfo?.mixedContent) {
+                    // Check if iframe actually loaded despite mixed content warnings
+                    try {
+                        const iframeDoc = this.websiteFrame.contentDocument || this.websiteFrame.contentWindow.document;
+                        if (iframeDoc && iframeDoc.body && iframeDoc.body.innerHTML.trim()) {
+                            // Iframe loaded successfully, just with some blocked resources
+                            this.handlePartialMixedContentSuccess();
+                            return;
+                        }
+                    } catch (e) {
+                        // Cross-origin, but that's normal - assume it loaded
+                        this.handlePartialMixedContentSuccess();
+                        return;
+                    }
+                    this.handleMixedContentBlocked();
+                } else {
+                    this.setConnectionStatus('error', 'Connection timeout');
+                    this.handleLoadError();
+                }
             }
-        }, 15000); // 15 second timeout
+        }, 3000); // 3 second timeout for mixed content detection
     }
 
     refreshWebsite() {
@@ -317,15 +343,23 @@ class DDCBrowser {
         const loadTime = Date.now() - this.loadStartTime;
         this.hideLoading();
         
-        // Show connection status with proxy info
-        const statusText = this.currentUrlInfo?.proxied ? 'Connected (via proxy)' : 'Connected';
+        // Show connection status with proxy/mixed content info
+        let statusText = 'Connected';
+        if (this.currentUrlInfo?.proxied) {
+            statusText = 'Connected (via proxy)';
+        } else if (this.currentUrlInfo?.mixedContent) {
+            statusText = 'Connected (mixed content)';
+        }
         this.setConnectionStatus('connected', statusText);
         this.showLoadTime(loadTime);
         
-        // Show success message with proxy info
-        const successMsg = this.currentUrlInfo?.proxied 
-            ? 'DDC4000 Interface Loaded via HTTPS Proxy!' 
-            : 'DDC4000 Interface Loaded Successfully!';
+        // Show success message with appropriate info
+        let successMsg = 'DDC4000 Interface Loaded Successfully!';
+        if (this.currentUrlInfo?.proxied) {
+            successMsg = 'DDC4000 Interface Loaded via HTTPS Proxy!';
+        } else if (this.currentUrlInfo?.mixedContent) {
+            successMsg = 'DDC4000 Interface Loaded (HTTP over HTTPS - check browser security settings if blocked)';
+        }
         this.showSuccess(successMsg);
         
         // Update frame size and auto-fit the interface to screen size
@@ -338,6 +372,252 @@ class DDCBrowser {
         this.hideLoading();
         this.setConnectionStatus('error', 'Connection Failed');
         this.showError('Failed to load the DDC4000 interface. Please check the IP address and network connection.');
+    }
+
+    handlePartialMixedContentSuccess() {
+        if (this.loadTimeout) {
+            clearTimeout(this.loadTimeout);
+            this.loadTimeout = null;
+        }
+        
+        const loadTime = Date.now() - this.loadStartTime;
+        this.hideLoading();
+        
+        this.setConnectionStatus('connected', 'Connected (partial - some images blocked)');
+        this.showLoadTime(loadTime);
+        this.showSuccess('DDC4000 Interface Loaded! (Some images may be missing due to mixed content)');
+        
+        // Check for browser compatibility error after a short delay
+        setTimeout(() => {
+            this.checkForBrowserCompatibilityError();
+        }, 2000);
+        
+        // Update frame size and auto-fit
+        this.zoomManager.updateFrameSize();
+        setTimeout(() => this.zoomManager.autoFit(), 500);
+    }
+
+    checkForBrowserCompatibilityError() {
+        try {
+            const iframe = this.websiteFrame;
+            const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
+            
+            if (iframeDoc) {
+                const bodyText = iframeDoc.body ? iframeDoc.body.innerText : '';
+                
+                // Check for German browser compatibility error
+                if (bodyText.includes('nicht unterstützt') || bodyText.includes('Zurück zur Startseite')) {
+                    this.showBrowserCompatibilityHelp();
+                }
+            }
+        } catch (e) {
+            // Cross-origin restrictions prevent checking, but that's normal
+            console.log('Cannot check iframe content (cross-origin)');
+        }
+    }
+
+    showBrowserCompatibilityHelp() {
+        const overlay = document.createElement('div');
+        overlay.style.cssText = `
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.8); z-index: 3000;
+            display: flex; align-items: center; justify-content: center;
+        `;
+        
+        const modal = document.createElement('div');
+        modal.style.cssText = `
+            background: white; border-radius: 12px; padding: 30px;
+            max-width: 600px; width: 90%; box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+        `;
+        
+        modal.innerHTML = `
+            <div style="text-align: center; margin-bottom: 25px;">
+                <div style="font-size: 48px; margin-bottom: 15px;">⚠️</div>
+                <h2 style="color: #f39c12; margin: 0;">Browser Compatibility Issue</h2>
+                <p style="color: #7f8c8d; margin: 10px 0;">DDC4000 shows "Browser not supported" message</p>
+            </div>
+            
+            <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;">
+                <h3 style="margin-top: 0; color: #2c3e50;">🔧 Solutions:</h3>
+                
+                <div style="margin: 15px 0;">
+                    <strong>Option 1: Try IE Mode URL</strong>
+                    <p style="margin: 10px 0;">DDC4000 systems often work with slightly different URLs:</p>
+                    <button id="tryAlternateUrl" style="
+                        background: #3498db; color: white; border: none; 
+                        padding: 8px 16px; border-radius: 4px; cursor: pointer;
+                        margin: 5px 0;
+                    ">Try Alternative URL</button>
+                </div>
+                
+                <div style="margin: 15px 0;">
+                    <strong>Option 2: Ignore Warning</strong>
+                    <p style="margin: 10px 0;">Sometimes the interface works despite the warning.</p>
+                    <p style="font-size: 14px; color: #666;">Look for any working elements in the interface below the error message.</p>
+                </div>
+            </div>
+            
+            <div style="text-align: center; margin-top: 25px;">
+                <button id="closeBrowserModal" style="
+                    background: #6c757d; color: white; border: none; 
+                    padding: 12px 24px; border-radius: 6px; cursor: pointer;
+                    font-size: 14px;
+                ">Close</button>
+            </div>
+        `;
+        
+        overlay.appendChild(modal);
+        document.body.appendChild(overlay);
+        
+        // Event listeners
+        modal.querySelector('#closeBrowserModal').addEventListener('click', () => {
+            document.body.removeChild(overlay);
+        });
+        
+        modal.querySelector('#tryAlternateUrl').addEventListener('click', () => {
+            document.body.removeChild(overlay);
+            this.tryAlternativeUrl();
+        });
+        
+        overlay.addEventListener('click', (e) => {
+            if (e.target === overlay) {
+                document.body.removeChild(overlay);
+            }
+        });
+    }
+
+    tryAlternativeUrl() {
+        const protocol = this.protocolSelect.value;
+        const ip = this.ipInput.value.trim();
+        const resolution = this.resolutionSelect.value;
+        
+        // Try different URL patterns that DDC4000 might accept
+        let alternativeUrl;
+        if (resolution === 'QVGA') {
+            alternativeUrl = `${protocol}://${ip}/ddcdialog.html?type=${resolution}&useOvl=0`;
+        } else {
+            alternativeUrl = `${protocol}://${ip}/ddcdialog.html?type=${resolution}&useOvl=0`;
+        }
+        
+        this.showLoading();
+        this.setConnectionStatus('connecting', 'Trying alternative URL...');
+        
+        const urlWithTimestamp = this.addTimestampToUrl(alternativeUrl);
+        this.websiteFrame.src = urlWithTimestamp;
+        
+        this.showSuccess('Trying alternative DDC4000 URL format...');
+    }
+
+    handleMixedContentBlocked() {
+        this.hideLoading();
+        this.setConnectionStatus('error', 'Mixed Content Blocked');
+        
+        const targetUrl = this.currentUrlInfo.originalUrl;
+        const hostname = new URL(targetUrl).hostname;
+        
+        // Create detailed mixed content help modal
+        const overlay = document.createElement('div');
+        overlay.style.cssText = `
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.8); z-index: 3000;
+            display: flex; align-items: center; justify-content: center;
+        `;
+        
+        const modal = document.createElement('div');
+        modal.style.cssText = `
+            background: white; border-radius: 12px; padding: 30px;
+            max-width: 600px; width: 90%; box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+            max-height: 80vh; overflow-y: auto;
+        `;
+        
+        modal.innerHTML = `
+            <div style="text-align: center; margin-bottom: 25px;">
+                <div style="font-size: 48px; margin-bottom: 15px;">🔒</div>
+                <h2 style="color: #e74c3c; margin: 0;">Mixed Content Blocked</h2>
+                <p style="color: #7f8c8d; margin: 10px 0;">Chrome blocked the HTTP DDC4000 connection from this HTTPS site</p>
+                <p style="color: #7f8c8d; font-size: 14px; margin: 5px 0;">(HTTP redirects to HTTPS automatically)</p>
+            </div>
+            
+            <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;">
+                <h3 style="margin-top: 0; color: #2c3e50;">🎯 Quick Solutions:</h3>
+                
+                <div style="margin: 15px 0;">
+                    <strong>Option 1: Allow Mixed Content (Recommended)</strong>
+                    <ol style="margin: 10px 0; padding-left: 20px;">
+                        <li>Look for the 🛡️ shield icon in Chrome's address bar</li>
+                        <li>Click it and select "Load unsafe scripts"</li>
+                        <li>The page will reload and connect to your DDC4000</li>
+                    </ol>
+                </div>
+                
+                <div style="margin: 15px 0;">
+                    <strong>Option 2: Chrome Settings</strong>
+                    <p style="margin: 10px 0;">
+                        <a href="chrome://settings/content/insecureContent" target="_blank" style="
+                            display: inline-block; background: #3498db; color: white; 
+                            padding: 8px 16px; text-decoration: none; border-radius: 4px;
+                            margin: 5px 0;
+                        ">Open Chrome Insecure Content Settings</a>
+                    </p>
+                    <ol style="margin: 10px 0; padding-left: 20px; font-size: 14px;">
+                        <li>Click "Add" next to "Allow"</li>
+                        <li>Enter: <code>4000.rappo.dev</code></li>
+                        <li>Refresh this page</li>
+                    </ol>
+                </div>
+                
+                <div style="margin: 15px 0;">
+                    <strong>Option 3: Local Development</strong>
+                    <p style="margin: 10px 0;">For unrestricted access, run locally:</p>
+                    <code style="display: block; background: #f1f2f6; padding: 10px; border-radius: 4px; font-size: 12px;">
+                        git clone [repository]<br>
+                        python -m http.server 8000<br>
+                        Visit: http://localhost:8000
+                    </code>
+                </div>
+            </div>
+            
+            <div style="background: #fff3cd; border: 1px solid #ffeaa7; padding: 15px; border-radius: 8px; margin: 20px 0;">
+                <strong>🔧 Technical Details:</strong>
+                <p style="margin: 10px 0; font-size: 14px;">
+                    Trying to connect to: <code style="background: #f1f2f6; padding: 2px 6px; border-radius: 3px;">${targetUrl}</code><br>
+                    Device IP: <strong>${hostname}</strong>
+                </p>
+            </div>
+            
+            <div style="text-align: center; margin-top: 25px;">
+                <button id="closeMixedContentModal" style="
+                    background: #6c757d; color: white; border: none; 
+                    padding: 12px 24px; border-radius: 6px; cursor: pointer;
+                    font-size: 14px;
+                ">Close</button>
+                
+                <button id="tryAgainBtn" style="
+                    background: #28a745; color: white; border: none; 
+                    padding: 12px 24px; border-radius: 6px; cursor: pointer;
+                    font-size: 14px; margin-left: 10px;
+                ">Try Again</button>
+            </div>
+        `;
+        
+        overlay.appendChild(modal);
+        document.body.appendChild(overlay);
+        
+        // Event listeners
+        modal.querySelector('#closeMixedContentModal').addEventListener('click', () => {
+            document.body.removeChild(overlay);
+        });
+        
+        modal.querySelector('#tryAgainBtn').addEventListener('click', () => {
+            document.body.removeChild(overlay);
+            this.loadWebsite();
+        });
+        
+        overlay.addEventListener('click', (e) => {
+            if (e.target === overlay) {
+                document.body.removeChild(overlay);
+            }
+        });
     }
 
     // UI helper methods
