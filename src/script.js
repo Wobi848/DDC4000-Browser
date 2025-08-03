@@ -89,7 +89,7 @@ class DDCBrowser {
         this.resetZoomBtn.addEventListener('click', () => this.resetZoom());
         
         // Screenshot control event listeners
-        this.captureBtn.addEventListener('click', () => this.showScreenshotOptions());
+        this.captureBtn.addEventListener('click', () => this.handleCaptureClick());
         this.galleryBtn.addEventListener('click', () => this.toggleGallery());
         this.autoCapture.addEventListener('click', () => this.toggleAutoCapture());
         this.closeGalleryBtn.addEventListener('click', () => this.closeGallery());
@@ -643,6 +643,31 @@ class DDCBrowser {
         }
     }
     
+    async handleCaptureClick() {
+        // Check if screen sharing is available
+        const isSecure = location.protocol === 'https:' || location.hostname === 'localhost' || location.hostname === '127.0.0.1';
+        const hasGetDisplayMedia = !!(navigator.mediaDevices && navigator.mediaDevices.getDisplayMedia);
+        
+        if (isSecure && hasGetDisplayMedia) {
+            // Try screen sharing directly
+            try {
+                this.captureBtn.textContent = '🎬';
+                this.captureBtn.disabled = true;
+                await this.captureViaScreenShare();
+                return;
+            } catch (error) {
+                console.log('Direct screen capture failed:', error.message);
+                this.showError('Screen capture failed: ' + error.message);
+            } finally {
+                this.captureBtn.textContent = '📷';
+                this.captureBtn.disabled = false;
+            }
+        }
+        
+        // Fallback to options menu
+        this.showScreenshotOptions();
+    }
+
     // Screenshot options menu
     showScreenshotOptions() {
         const options = [
@@ -650,6 +675,11 @@ class DDCBrowser {
                 text: '📷 Try Auto Capture',
                 description: 'Attempt automatic screenshot with iframe2image',
                 action: () => this.captureScreenshot()
+            },
+            {
+                text: '🖥️ Check Screen Capture',
+                description: 'Test if screen sharing is available',
+                action: () => this.checkScreenCapture()
             },
             {
                 text: '🌐 Open DDC in New Tab',
@@ -665,6 +695,11 @@ class DDCBrowser {
                 text: '🎯 Direct Image URL',
                 description: 'Try to open DDC image directly',
                 action: () => this.openDdcImageDirect()
+            },
+            {
+                text: '📱 Simple Canvas Capture',
+                description: 'Try basic iframe area capture',
+                action: () => this.simpleIframeCapture()
             }
         ];
 
@@ -1583,6 +1618,102 @@ class DDCBrowser {
         }
     }
     
+    async checkScreenCapture() {
+        const diagnostics = [];
+        
+        // Check if running on HTTPS or localhost
+        const isSecure = location.protocol === 'https:' || location.hostname === 'localhost' || location.hostname === '127.0.0.1';
+        diagnostics.push(`🔒 Secure context: ${isSecure ? '✅ Yes' : '❌ No (HTTPS required)'}`);
+        
+        // Check if getDisplayMedia is available
+        const hasGetDisplayMedia = !!(navigator.mediaDevices && navigator.mediaDevices.getDisplayMedia);
+        diagnostics.push(`📺 Screen Capture API: ${hasGetDisplayMedia ? '✅ Available' : '❌ Not available'}`);
+        
+        // Check browser
+        const userAgent = navigator.userAgent;
+        let browser = 'Unknown';
+        if (userAgent.includes('Chrome')) browser = 'Chrome';
+        else if (userAgent.includes('Firefox')) browser = 'Firefox';
+        else if (userAgent.includes('Safari')) browser = 'Safari';
+        else if (userAgent.includes('Edge')) browser = 'Edge';
+        diagnostics.push(`🌐 Browser: ${browser}`);
+        
+        // Try a test call
+        if (hasGetDisplayMedia && isSecure) {
+            diagnostics.push(`🧪 Testing screen capture...`);
+            try {
+                const stream = await navigator.mediaDevices.getDisplayMedia({ video: true });
+                diagnostics.push(`✅ Screen capture works!`);
+                stream.getTracks().forEach(track => track.stop());
+            } catch (error) {
+                diagnostics.push(`❌ Screen capture failed: ${error.message}`);
+            }
+        }
+        
+        // Show results
+        alert(`Screen Capture Diagnostics:\n\n${diagnostics.join('\n')}\n\nIf screen capture is not working:\n• Use HTTPS instead of HTTP\n• Try Chrome/Edge browsers\n• Use 'Open DDC in New Tab' option instead`);
+    }
+    
+    async simpleIframeCapture() {
+        try {
+            this.showSuccess('Attempting simple iframe capture...');
+            
+            // Method 1: Try to capture iframe surroundings
+            const iframe = this.websiteFrame;
+            const container = this.iframeContainer;
+            
+            // Create a placeholder image showing iframe info
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            
+            canvas.width = iframe.offsetWidth || 800;
+            canvas.height = iframe.offsetHeight || 600;
+            
+            // Fill with background
+            ctx.fillStyle = '#f0f0f0';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // Add border
+            ctx.strokeStyle = '#333';
+            ctx.lineWidth = 2;
+            ctx.strokeRect(1, 1, canvas.width-2, canvas.height-2);
+            
+            // Add text info
+            ctx.fillStyle = '#333';
+            ctx.font = '16px Arial';
+            ctx.textAlign = 'center';
+            
+            const iframeUrl = iframe.src;
+            const lines = [
+                'DDC4000 Interface Screenshot',
+                `URL: ${iframeUrl}`,
+                `Size: ${canvas.width}x${canvas.height}`,
+                '',
+                'Note: Due to browser security,',
+                'iframe content cannot be captured directly.',
+                '',
+                'Try these alternatives:',
+                '• Use browser screenshot (Ctrl+Shift+S)',
+                '• Open DDC in new tab and screenshot',
+                '• Use screen capture tool'
+            ];
+            
+            lines.forEach((line, index) => {
+                ctx.fillText(line, canvas.width/2, 60 + (index * 25));
+            });
+            
+            // Convert to image
+            const dataUrl = canvas.toDataURL('image/png');
+            this.saveScreenshot(dataUrl);
+            
+            this.showSuccess('Placeholder screenshot created with DDC info!');
+            
+        } catch (error) {
+            console.error('Simple capture failed:', error);
+            this.showError('Simple capture failed: ' + error.message);
+        }
+    }
+    
     showScreenShareInstructions() {
         // Create modal with instructions
         const modal = document.createElement('div');
@@ -1641,9 +1772,9 @@ class DDCBrowser {
     
     showScreenCaptureInterface(video, stream) {
         // Create capture interface
-        const interface = document.createElement('div');
-        interface.id = 'screenCaptureInterface';
-        interface.style.cssText = `
+        const captureInterface = document.createElement('div');
+        captureInterface.id = 'screenCaptureInterface';
+        captureInterface.style.cssText = `
             position: fixed;
             top: 20px;
             right: 20px;
@@ -1655,7 +1786,7 @@ class DDCBrowser {
             min-width: 300px;
         `;
         
-        interface.innerHTML = `
+        captureInterface.innerHTML = `
             <h3 style="margin: 0 0 15px 0; color: #2c3e50;">📺 Screen Capture Active</h3>
             <p style="margin-bottom: 15px; color: #666;">Capturing: <span id="captureSource">Screen/Window</span></p>
             <div style="display: flex; gap: 10px; margin-bottom: 15px;">
@@ -1669,7 +1800,7 @@ class DDCBrowser {
             <div style="font-size: 11px; color: #666;">Auto-capture in 2 seconds...</div>
         `;
         
-        document.body.appendChild(interface);
+        document.body.appendChild(captureInterface);
         
         // Add event listeners
         document.getElementById('captureNowBtn').onclick = () => {
@@ -1678,12 +1809,12 @@ class DDCBrowser {
         
         document.getElementById('stopCaptureBtn').onclick = () => {
             stream.getTracks().forEach(track => track.stop());
-            interface.remove();
+            captureInterface.remove();
         };
         
         // Auto-remove interface when stream ends
         stream.getTracks()[0].addEventListener('ended', () => {
-            interface.remove();
+            captureInterface.remove();
         });
     }
     
@@ -1710,8 +1841,8 @@ class DDCBrowser {
             stream.getTracks().forEach(track => track.stop());
             
             // Remove interface
-            const interface = document.getElementById('screenCaptureInterface');
-            if (interface) interface.remove();
+            const captureInterface = document.getElementById('screenCaptureInterface');
+            if (captureInterface) captureInterface.remove();
             
             // Save screenshot
             this.saveScreenshot(dataUrl);
