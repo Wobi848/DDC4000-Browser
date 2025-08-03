@@ -141,6 +141,7 @@ export class ScreenshotManager {
         try {
             const iframe = this.ddcBrowser.websiteFrame;
             const iframeRect = iframe.getBoundingClientRect();
+            const resolution = this.ddcBrowser.resolutionSelect.value;
             
             const scrollX = window.pageXOffset || document.documentElement.scrollLeft;
             const scrollY = window.pageYOffset || document.documentElement.scrollTop;
@@ -151,12 +152,28 @@ export class ScreenshotManager {
             const scaleX = sourceCanvas.width / docWidth;
             const scaleY = sourceCanvas.height / docHeight;
             
-            const cropX = Math.max(0, (iframeRect.left + scrollX) * scaleX);
-            const cropY = Math.max(0, (iframeRect.top + scrollY) * scaleY);
-            const cropWidth = Math.min(sourceCanvas.width - cropX, iframeRect.width * scaleX);
-            const cropHeight = Math.min(sourceCanvas.height - cropY, iframeRect.height * scaleY);
+            // Calculate base crop area
+            let cropX = Math.max(0, (iframeRect.left + scrollX) * scaleX);
+            let cropY = Math.max(0, (iframeRect.top + scrollY) * scaleY);
+            let cropWidth = Math.min(sourceCanvas.width - cropX, iframeRect.width * scaleX);
+            let cropHeight = Math.min(sourceCanvas.height - cropY, iframeRect.height * scaleY);
             
-            console.log(`🎯 Crop area: ${cropX}, ${cropY}, ${cropWidth}x${cropHeight}`);
+            // For QVGA, adjust for the transform and clipping
+            if (resolution === 'QVGA') {
+                // Account for the 85px left shift and clipping
+                const shiftPx = 85;
+                const adjustedShift = shiftPx * scaleX;
+                
+                // Adjust crop area to account for the transform
+                cropX += adjustedShift; // Shift crop area right to compensate for content shift left
+                cropWidth = Math.min(320 * scaleX, cropWidth); // Limit to actual QVGA content width
+                
+                console.log(`🎯 QVGA Adjusted crop: shift=${adjustedShift}px`);
+            }
+            
+            console.log(`🎯 Final crop area (${resolution}): ${cropX}, ${cropY}, ${cropWidth}x${cropHeight}`);
+            console.log(`🎯 Source canvas: ${sourceCanvas.width}x${sourceCanvas.height}`);
+            console.log(`🎯 Iframe rect: ${iframeRect.left}, ${iframeRect.top}, ${iframeRect.width}x${iframeRect.height}`);
             
             const croppedCanvas = document.createElement('canvas');
             const croppedCtx = croppedCanvas.getContext('2d');

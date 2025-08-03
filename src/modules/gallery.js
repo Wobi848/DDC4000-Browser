@@ -93,23 +93,40 @@ export class GalleryManager {
             return;
         }
 
-        const galleryHtml = screenshots.map(screenshot => `
-            <div class="gallery-item" data-screenshot-id="${screenshot.id}">
-                <img src="${screenshot.dataUrl}" alt="Screenshot" class="gallery-thumbnail">
-                <div class="gallery-item-info">
-                    <div class="gallery-item-date">${new Date(screenshot.timestamp).toLocaleString()}</div>
-                    <div class="gallery-item-actions">
-                        <button class="gallery-action-btn inspect-btn" title="Inspect">🔍</button>
-                        <button class="gallery-action-btn download-btn" title="Download">💾</button>
-                        <button class="gallery-action-btn delete-btn" title="Delete">🗑️</button>
+        const galleryHtml = screenshots.map(screenshot => {
+            // Create a temporary image to get dimensions
+            const img = new Image();
+            img.src = screenshot.dataUrl;
+            
+            return `
+                <div class="gallery-item" data-screenshot-id="${screenshot.id}">
+                    <img src="${screenshot.dataUrl}" alt="Screenshot" class="gallery-image">
+                    <div class="gallery-info">
+                        <div class="gallery-timestamp">${new Date(screenshot.timestamp).toLocaleString()}</div>
+                        <div class="gallery-details">
+                            <span>DDC Screenshot</span>
+                            <span>${screenshot.filename.includes('qvga') || screenshot.dataUrl.includes('type=QVGA') ? 'QVGA' : 'WVGA'}</span>
+                        </div>
+                        <div class="gallery-actions">
+                            <button class="gallery-btn inspect-btn" title="Inspect">🔍</button>
+                            <button class="gallery-btn download" title="Download">💾</button>
+                            <button class="gallery-btn delete" title="Delete">🗑️</button>
+                        </div>
                     </div>
                 </div>
-            </div>
-        `).join('');
+            `;
+        }).join('');
 
         this.ddcBrowser.galleryGrid.innerHTML = galleryHtml;
 
         // Add event listeners
+        this.ddcBrowser.galleryGrid.querySelectorAll('.gallery-image').forEach((img, index) => {
+            img.addEventListener('click', () => {
+                this.inspectScreenshot(screenshots[index]);
+            });
+            img.style.cursor = 'pointer';
+        });
+
         this.ddcBrowser.galleryGrid.querySelectorAll('.inspect-btn').forEach((btn, index) => {
             btn.addEventListener('click', (e) => {
                 e.stopPropagation();

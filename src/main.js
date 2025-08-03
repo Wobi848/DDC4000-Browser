@@ -12,7 +12,6 @@ class DDCBrowser {
         this.initializePWA();
         
         this.loadStartTime = null;
-        this.autoCapturing = false;
         this.deferredPrompt = null;
         this.configCollapsed = false;
         
@@ -26,6 +25,7 @@ class DDCBrowser {
         this.resolutionSelect = document.getElementById('resolutionSelect');
         this.presetSelect = document.getElementById('presetSelect');
         this.presetName = document.getElementById('presetName');
+        this.autoloadPresetSelect = document.getElementById('autoloadPresetSelect');
         this.loadBtn = document.getElementById('loadBtn');
         this.refreshBtn = document.getElementById('refreshBtn');
         this.savePresetBtn = document.getElementById('savePresetBtn');
@@ -53,7 +53,6 @@ class DDCBrowser {
         // Screenshot elements
         this.captureBtn = document.getElementById('captureBtn');
         this.galleryBtn = document.getElementById('galleryBtn');
-        this.autoCapture = document.getElementById('autoCapture');
         this.galleryModal = document.getElementById('galleryModal');
         this.galleryGrid = document.getElementById('galleryGrid');
         this.closeGalleryBtn = document.getElementById('closeGalleryBtn');
@@ -93,6 +92,7 @@ class DDCBrowser {
         this.deletePresetBtn.addEventListener('click', () => this.presetManager.deletePreset());
         
         this.presetSelect.addEventListener('change', () => this.presetManager.loadPreset());
+        this.autoloadPresetSelect.addEventListener('change', () => this.presetManager.setAutoloadPreset());
         this.ipInput.addEventListener('keypress', (e) => {
             if (e.key === 'Enter') {
                 this.loadWebsite();
@@ -109,7 +109,6 @@ class DDCBrowser {
         // Screenshot controls
         this.captureBtn.addEventListener('click', () => this.screenshotManager.handleCaptureClick());
         this.galleryBtn.addEventListener('click', () => this.galleryManager.toggleGallery());
-        this.autoCapture.addEventListener('click', () => this.toggleAutoCapture());
         this.closeGalleryBtn.addEventListener('click', () => this.galleryManager.closeGallery());
         this.clearGalleryBtn.addEventListener('click', () => this.galleryManager.clearGallery());
         this.exportGalleryBtn.addEventListener('click', () => this.galleryManager.exportGallery());
@@ -139,6 +138,9 @@ class DDCBrowser {
         
         // IP suggestions
         this.ipInput.addEventListener('input', () => this.updateIpSuggestions());
+        
+        // Keyboard shortcuts
+        document.addEventListener('keydown', (e) => this.handleKeyboardShortcuts(e));
     }
 
     initializePWA() {
@@ -169,13 +171,18 @@ class DDCBrowser {
         // Load saved config state
         this.loadConfigState();
         
-        // Load IP from URL params if present
+        // Check for URL params first (takes priority over autoload)
         const params = new URLSearchParams(window.location.search);
         if (params.get('ip')) {
             this.ipInput.value = params.get('ip');
             if (params.get('autoload') === 'true') {
                 setTimeout(() => this.loadWebsite(), 1000);
             }
+        } else {
+            // Check and load autoload preset if no URL params
+            setTimeout(() => {
+                this.presetManager.checkAndLoadAutoPreset();
+            }, 500);
         }
     }
 
@@ -266,10 +273,6 @@ class DDCBrowser {
         this.zoomManager.updateFrameSize();
         setTimeout(() => this.zoomManager.autoFit(), 500);
         
-        // Auto-capture if enabled
-        if (this.autoCapturing) {
-            setTimeout(() => this.screenshotManager.captureScreenshot(), 1000);
-        }
     }
 
     handleLoadError() {
@@ -352,14 +355,6 @@ class DDCBrowser {
         }, 300);
     }
 
-    toggleAutoCapture() {
-        this.autoCapturing = !this.autoCapturing;
-        this.autoCapture.classList.toggle('active', this.autoCapturing);
-        
-        const message = this.autoCapturing ? 'Auto-capture enabled' : 'Auto-capture disabled';
-        this.showSuccess(message);
-        console.log(message);
-    }
 
     updateIpSuggestions() {
         const commonIPs = [
@@ -377,6 +372,72 @@ class DDCBrowser {
 
     updateGalleryDisplay() {
         this.galleryManager.updateGalleryDisplay();
+    }
+    
+    handleKeyboardShortcuts(e) {
+        // Only handle shortcuts when not typing in input fields
+        const activeElement = document.activeElement;
+        const isTyping = activeElement && (
+            activeElement.tagName === 'INPUT' || 
+            activeElement.tagName === 'TEXTAREA' ||
+            activeElement.tagName === 'SELECT'
+        );
+        
+        if (isTyping) return;
+        
+        // Handle shortcuts
+        if (e.ctrlKey) {
+            switch(e.key) {
+                case '=':
+                case '+':
+                    e.preventDefault();
+                    this.zoomManager.zoomIn();
+                    break;
+                case '-':
+                    e.preventDefault();
+                    this.zoomManager.zoomOut();
+                    break;
+                case '0':
+                    e.preventDefault();
+                    this.zoomManager.resetZoom();
+                    break;
+                case 'r':
+                    e.preventDefault();
+                    this.refreshWebsite();
+                    break;
+                case 's':
+                    e.preventDefault();
+                    this.screenshotManager.handleCaptureClick();
+                    break;
+                case 'g':
+                    e.preventDefault();
+                    this.galleryManager.toggleGallery();
+                    break;
+            }
+        } else {
+            switch(e.key) {
+                case 'F11':
+                    e.preventDefault();
+                    this.zoomManager.toggleFullscreen();
+                    break;
+                case 'Escape':
+                    if (this.zoomManager.isFullscreen) {
+                        e.preventDefault();
+                        this.zoomManager.exitFullscreen();
+                    } else if (!this.galleryModal.classList.contains('hidden')) {
+                        e.preventDefault();
+                        this.galleryManager.closeGallery();
+                    } else if (!this.imageInspector.classList.contains('hidden')) {
+                        e.preventDefault();
+                        this.galleryManager.closeInspector();
+                    }
+                    break;
+                case 'f':
+                    e.preventDefault();
+                    this.zoomManager.autoFit();
+                    break;
+            }
+        }
     }
 
     createOptionsMenu(title, options) {
