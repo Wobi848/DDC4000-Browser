@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes, viewport-fit=cover">
     <meta name="description" content="Professional DDC4000 building automation interface browser with screenshot capabilities">
     <meta name="theme-color" content="#3498db">
     <meta name="author" content="Rappo">
@@ -11,9 +11,9 @@
     <meta property="og:title" content="DDC4000 Browser">
     <meta property="og:description" content="Professional DDC4000 building automation interface browser">
     <meta property="og:type" content="website">
-    <meta property="og:url" content="https://rappo.dev/">
-    <meta property="og:image" content="https://rappo.dev/icon-512.png">
-    <link rel="canonical" href="https://rappo.dev/">
+    <meta property="og:url" content="https://4000.rappo.dev/">
+    <meta property="og:image" content="https://4000.rappo.dev/icon-512.png">
+    <link rel="canonical" href="https://4000.rappo.dev/">
     <title>DDC4000 Browser</title>
     
     <!-- PWA Manifest -->
@@ -40,7 +40,10 @@
     <div class="container">
         <header class="header">
             <div class="header-top">
-                <h1>DDC4000 Browser</h1>
+                <div class="app-title">
+                    <h1>DDC4000 Browser</h1>
+                    <span class="version-badge" id="versionBadge">v1.3.0</span>
+                </div>
                 <button id="toggleConfigBtn" class="toggle-config-btn" title="Toggle Settings">⚙️</button>
             </div>
             
@@ -52,6 +55,12 @@
                             <option value="http">HTTP</option>
                             <option value="https">HTTPS</option>
                         </select>
+                        <small class="protocol-info" style="color: #7f8c8d; font-size: 11px; margin-top: 4px;">
+                            💡 HTTP devices on HTTPS sites use secure proxy
+                        </small>
+                        <small class="mobile-hint" style="color: #7f8c8d; font-size: 10px; display: none; margin-top: 2px;">
+                            📱 Double-tap iframe for auto-fit, pinch to zoom
+                        </small>
                     </div>
                     
                     <div class="config-group">
@@ -182,6 +191,65 @@
                 </div>
                 <div class="inspector-body">
                     <img id="inspectorImage" class="inspector-image" src="" alt="Screenshot">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Version Info Modal -->
+    <div id="versionModal" class="modal hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>📱 DDC4000 Browser</h2>
+                <div class="modal-actions">
+                    <button id="closeVersionModal" class="btn-close">×</button>
+                </div>
+            </div>
+            <div class="modal-body">
+                <div class="version-info">
+                    <div class="version-header">
+                        <h3>Version <span id="modalVersionNumber">1.3.0</span></h3>
+                        <span class="version-date">Released: August 2025</span>
+                    </div>
+                    
+                    <div class="version-features">
+                        <h4>🚀 Latest Features:</h4>
+                        <ul>
+                            <li>✅ HTTPS Proxy for HTTP DDC4000 devices</li>
+                            <li>✅ Mixed content security solution</li>
+                            <li>✅ Auto-load preset configuration</li>
+                            <li>✅ Enhanced QVGA viewport handling</li>
+                            <li>✅ Progressive Web App (PWA) support</li>
+                            <li>✅ Advanced screenshot cropping</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="version-tech">
+                        <h4>🔧 Technical Info:</h4>
+                        <div class="tech-grid">
+                            <div class="tech-item">
+                                <strong>Cache Version:</strong>
+                                <span id="cacheVersion">Loading...</span>
+                            </div>
+                            <div class="tech-item">
+                                <strong>Service Worker:</strong>
+                                <span id="swStatus">Checking...</span>
+                            </div>
+                            <div class="tech-item">
+                                <strong>Domain:</strong>
+                                <span>4000.rappo.dev</span>
+                            </div>
+                            <div class="tech-item">
+                                <strong>Protocol:</strong>
+                                <span id="protocolInfo">HTTPS</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="version-footer">
+                        <p><strong>Built for building automation professionals</strong></p>
+                        <p>Created by <strong>Rappo</strong> | Open Source</p>
+                    </div>
                 </div>
             </div>
         </div>

@@ -1,4 +1,4 @@
-const CACHE_NAME = 'ddc4000-browser-v1.2.0-release';
+const CACHE_NAME = 'ddc4000-browser-v1.3.0';
 const STATIC_CACHE_URLS = [
   '/',
   '/index.html',
@@ -92,6 +92,113 @@ self.addEventListener('fetch', (event) => {
         })
     );
     return;
+  }
+  
+  // Handle HTTP proxy requests for DDC4000 mixed content
+  if (requestUrl.pathname.startsWith('/proxy-ddc')) {
+    const targetUrl = requestUrl.searchParams.get('url');
+    if (targetUrl) {
+      event.respondWith(
+        fetch(targetUrl, {
+          mode: 'no-cors',
+          credentials: 'omit',
+          headers: {
+            'User-Agent': 'DDC4000-Browser/1.0'
+          }
+        }).then(response => {
+          // Clone the response to read headers
+          const responseHeaders = new Headers();
+          
+          // Copy important headers
+          for (const [key, value] of response.headers.entries()) {
+            if (!key.toLowerCase().startsWith('x-') && 
+                !['content-security-policy', 'x-frame-options'].includes(key.toLowerCase())) {
+              responseHeaders.set(key, value);
+            }
+          }
+          
+          // Add CORS and security headers
+          responseHeaders.set('Access-Control-Allow-Origin', '*');
+          responseHeaders.set('Access-Control-Allow-Methods', 'GET, POST');
+          responseHeaders.set('Access-Control-Allow-Headers', 'Content-Type');
+          responseHeaders.delete('X-Frame-Options');
+          responseHeaders.delete('Content-Security-Policy');
+          
+          // Create new response with proper headers
+          return new Response(response.body, {
+            status: response.status,
+            statusText: response.statusText,
+            headers: responseHeaders
+          });
+        }).catch(error => {
+          console.error('DDC Proxy failed:', error);
+          console.error('Target URL:', targetUrl);
+          console.error('Error details:', {
+            name: error.name,
+            message: error.message,
+            stack: error.stack
+          });
+          
+          return new Response(`
+            <!DOCTYPE html>
+            <html>
+            <head>
+              <title>DDC4000 - Connection Failed</title>
+              <style>
+                body { 
+                  font-family: Arial, sans-serif; 
+                  text-align: center; 
+                  padding: 50px; 
+                  background: #f8f9fa;
+                }
+                .error { color: #e74c3c; }
+                .debug { 
+                  background: #fff; 
+                  border: 1px solid #ddd; 
+                  border-radius: 8px; 
+                  padding: 20px; 
+                  margin: 20px auto; 
+                  max-width: 600px; 
+                  text-align: left;
+                }
+                .debug h3 { margin-top: 0; color: #2c3e50; }
+                .debug pre { 
+                  background: #f1f2f6; 
+                  padding: 10px; 
+                  border-radius: 4px; 
+                  overflow-x: auto;
+                  font-size: 12px;
+                }
+              </style>
+            </head>
+            <body>
+              <h1 class="error">DDC4000 Connection Failed</h1>
+              <p>Unable to connect to DDC4000 device</p>
+              
+              <div class="debug">
+                <h3>Connection Details:</h3>
+                <p><strong>Target URL:</strong> ${targetUrl}</p>
+                <p><strong>Error:</strong> ${error.message}</p>
+                <p><strong>Error Type:</strong> ${error.name}</p>
+                
+                <h3>Troubleshooting:</h3>
+                <ul>
+                  <li>Check if the DDC4000 device is powered on</li>
+                  <li>Verify the IP address (${new URL(targetUrl).hostname}) is correct</li>
+                  <li>Ensure the device is on the same network</li>
+                  <li>Try accessing the device directly: <a href="${targetUrl}" target="_blank">${targetUrl}</a></li>
+                </ul>
+              </div>
+            </body>
+            </html>
+          `, { 
+            status: 502,
+            headers: { 'Content-Type': 'text/html; charset=utf-8' }
+          });
+        })
+      );
+      return;
+    }
   }
   
   // Handle screenshot proxy requests

@@ -4,6 +4,63 @@ export class ZoomManager {
         this.ddcBrowser = ddcBrowser;
         this.currentZoom = 1.0;
         this.isFullscreen = false;
+        this.initializeTouchGestures();
+    }
+    
+    initializeTouchGestures() {
+        // Add touch gesture support for mobile
+        const iframe = this.ddcBrowser.websiteFrame;
+        const container = this.ddcBrowser.iframeContainer;
+        
+        // Variables for touch handling
+        this.touchStartDistance = 0;
+        this.initialZoom = 1.0;
+        this.touchStartTime = 0;
+        
+        // Double-tap to auto-fit
+        let lastTouchTime = 0;
+        container.addEventListener('touchend', (e) => {
+            const currentTime = new Date().getTime();
+            const tapLength = currentTime - lastTouchTime;
+            if (tapLength < 500 && tapLength > 0) {
+                e.preventDefault();
+                this.autoFit();
+            }
+            lastTouchTime = currentTime;
+        });
+        
+        // Pinch-to-zoom gesture
+        container.addEventListener('touchstart', (e) => {
+            if (e.touches.length === 2) {
+                e.preventDefault();
+                this.touchStartDistance = this.getTouchDistance(e.touches);
+                this.initialZoom = this.currentZoom;
+                this.touchStartTime = Date.now();
+            }
+        });
+        
+        container.addEventListener('touchmove', (e) => {
+            if (e.touches.length === 2) {
+                e.preventDefault();
+                const currentDistance = this.getTouchDistance(e.touches);
+                const scale = currentDistance / this.touchStartDistance;
+                const newZoom = Math.max(0.25, Math.min(5.0, this.initialZoom * scale));
+                this.setZoom(newZoom);
+            }
+        });
+        
+        // Prevent default touch behavior on iframe to allow gestures
+        iframe.addEventListener('touchstart', (e) => {
+            if (e.touches.length > 1) {
+                e.preventDefault();
+            }
+        }, { passive: false });
+    }
+    
+    getTouchDistance(touches) {
+        const dx = touches[0].clientX - touches[1].clientX;
+        const dy = touches[0].clientY - touches[1].clientY;
+        return Math.sqrt(dx * dx + dy * dy);
     }
 
     setZoom(zoomLevel) {

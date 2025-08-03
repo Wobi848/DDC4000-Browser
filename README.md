@@ -2,7 +2,7 @@
 
 Professional building automation interface browser for DDC4000 systems with advanced screenshot capabilities.
 
-🌐 **Live Demo**: [https://rappo.dev/](https://rappo.dev/)
+🌐 **Live Demo**: [https://4000.rappo.dev/](https://4000.rappo.dev/)
 
 ## Features
 
@@ -54,7 +54,7 @@ Professional building automation interface browser for DDC4000 systems with adva
 ## Installation
 
 ### As a Web App
-Visit [https://rappo.dev/](https://rappo.dev/) and click the install button in your browser.
+Visit [https://4000.rappo.dev/](https://4000.rappo.dev/) and click the install button in your browser.
 
 ### Local Development
 ```bash

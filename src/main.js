@@ -4,6 +4,9 @@ import { GalleryManager } from './modules/gallery.js';
 import { PresetManager } from './modules/presets.js';
 import { ZoomManager } from './modules/zoom.js';
 
+// Application version
+const APP_VERSION = '1.3.0';
+
 class DDCBrowser {
     constructor() {
         this.initializeElements();
@@ -75,6 +78,11 @@ class DDCBrowser {
         this.inspectorFit = document.getElementById('inspectorFit');
         this.inspectorDownload = document.getElementById('inspectorDownload');
         this.closeInspector = document.getElementById('closeInspector');
+        
+        // Version elements
+        this.versionBadge = document.getElementById('versionBadge');
+        this.versionModal = document.getElementById('versionModal');
+        this.closeVersionModal = document.getElementById('closeVersionModal');
     }
 
     initializeManagers() {
@@ -133,6 +141,15 @@ class DDCBrowser {
         this.inspectorDownload.addEventListener('click', () => this.galleryManager.downloadCurrentInspectorImage());
         this.closeInspector.addEventListener('click', () => this.galleryManager.closeInspector());
         
+        // Version modal controls
+        this.versionBadge.addEventListener('click', () => this.showVersionModal());
+        this.closeVersionModal.addEventListener('click', () => this.hideVersionModal());
+        this.versionModal.addEventListener('click', (e) => {
+            if (e.target === this.versionModal) {
+                this.hideVersionModal();
+            }
+        });
+        
         // Config toggle
         this.toggleConfigBtn.addEventListener('click', () => this.toggleConfig());
         
@@ -163,6 +180,10 @@ class DDCBrowser {
         this.setConnectionStatus('disconnected', 'Not Connected');
         this.updateIpSuggestions();
         this.galleryManager.updateGalleryDisplay();
+        
+        // Update version display
+        this.versionBadge.textContent = `v${APP_VERSION}`;
+        this.versionBadge.title = `DDC4000 Browser v${APP_VERSION} - Click for details`;
         
         // Reset form to clean state
         this.presetSelect.value = '';
@@ -202,14 +223,35 @@ class DDCBrowser {
             return { valid: false, error: 'Please enter an IP address.' };
         }
 
-        // For QVGA, try different URL parameters to improve content positioning
-        let url;
+        // Build the target DDC URL
+        let targetUrl;
         if (resolution === 'QVGA') {
-            url = `${protocol}://${ip}/ddcdialog.html?useOvl=1&busyReload=1&type=${resolution}&x=0&y=0&fit=1`;
+            targetUrl = `${protocol}://${ip}/ddcdialog.html?useOvl=1&busyReload=1&type=${resolution}&x=0&y=0&fit=1`;
         } else {
-            url = `${protocol}://${ip}/ddcdialog.html?useOvl=1&busyReload=1&type=${resolution}`;
+            targetUrl = `${protocol}://${ip}/ddcdialog.html?useOvl=1&busyReload=1&type=${resolution}`;
         }
-        return { valid: true, url: url };
+
+        // Check for mixed content (HTTPS site loading HTTP content)
+        const isHttps = location.protocol === 'https:';
+        const isHttpTarget = protocol === 'http';
+        
+        if (isHttps && isHttpTarget) {
+            // Use service worker proxy to avoid mixed content issues
+            const proxyUrl = `/proxy-ddc?url=${encodeURIComponent(targetUrl)}`;
+            return { 
+                valid: true, 
+                url: proxyUrl,
+                originalUrl: targetUrl,
+                proxied: true
+            };
+        }
+        
+        return { 
+            valid: true, 
+            url: targetUrl,
+            originalUrl: targetUrl,
+            proxied: false
+        };
     }
 
     addTimestampToUrl(url) {
@@ -225,7 +267,12 @@ class DDCBrowser {
             return;
         }
 
-        this.setConnectionStatus('connecting', 'Connecting to DDC4000...');
+        // Show appropriate connection message
+        const statusMessage = urlResult.proxied 
+            ? 'Connecting via proxy (HTTP→HTTPS)...' 
+            : 'Connecting to DDC4000...';
+        
+        this.setConnectionStatus('connecting', statusMessage);
         this.showLoading();
         this.hideError();
         this.hideSuccess();
@@ -234,7 +281,11 @@ class DDCBrowser {
         // Add timestamp to prevent caching issues
         const urlWithTimestamp = this.addTimestampToUrl(urlResult.url);
         this.websiteFrame.src = urlWithTimestamp;
-        this.websiteFrame.onload = () => this.handleLoadSuccess(urlResult.url);
+        
+        // Store URL info for success handler
+        this.currentUrlInfo = urlResult;
+        
+        this.websiteFrame.onload = () => this.handleLoadSuccess();
         this.websiteFrame.onerror = () => this.handleLoadError();
         
         // Set a timeout to detect failed loads
@@ -265,9 +316,17 @@ class DDCBrowser {
         
         const loadTime = Date.now() - this.loadStartTime;
         this.hideLoading();
-        this.setConnectionStatus('connected', 'Connected');
+        
+        // Show connection status with proxy info
+        const statusText = this.currentUrlInfo?.proxied ? 'Connected (via proxy)' : 'Connected';
+        this.setConnectionStatus('connected', statusText);
         this.showLoadTime(loadTime);
-        this.showSuccess('DDC4000 Interface Loaded Successfully!');
+        
+        // Show success message with proxy info
+        const successMsg = this.currentUrlInfo?.proxied 
+            ? 'DDC4000 Interface Loaded via HTTPS Proxy!' 
+            : 'DDC4000 Interface Loaded Successfully!';
+        this.showSuccess(successMsg);
         
         // Update frame size and auto-fit the interface to screen size
         this.zoomManager.updateFrameSize();
@@ -437,6 +496,60 @@ class DDCBrowser {
                     this.zoomManager.autoFit();
                     break;
             }
+        }
+    }
+    
+    showVersionModal() {
+        // Update version info
+        document.getElementById('modalVersionNumber').textContent = APP_VERSION;
+        document.getElementById('protocolInfo').textContent = location.protocol.toUpperCase();
+        
+        // Get service worker info
+        this.updateServiceWorkerInfo();
+        
+        this.versionModal.classList.remove('hidden');
+        this.versionModal.style.display = 'flex';
+    }
+    
+    hideVersionModal() {
+        this.versionModal.classList.add('hidden');
+        this.versionModal.style.display = 'none';
+    }
+    
+    async updateServiceWorkerInfo() {
+        const cacheVersionEl = document.getElementById('cacheVersion');
+        const swStatusEl = document.getElementById('swStatus');
+        
+        try {
+            if ('serviceWorker' in navigator) {
+                const registration = await navigator.serviceWorker.getRegistration();
+                if (registration) {
+                    swStatusEl.textContent = registration.active ? '✅ Active' : '⏳ Installing';
+                    
+                    // Try to get cache version from service worker
+                    if (registration.active) {
+                        const messageChannel = new MessageChannel();
+                        messageChannel.port1.onmessage = (event) => {
+                            if (event.data && event.data.version) {
+                                cacheVersionEl.textContent = event.data.version;
+                            } else {
+                                cacheVersionEl.textContent = 'v1.3.0-proxy';
+                            }
+                        };
+                        registration.active.postMessage({ type: 'GET_VERSION' }, [messageChannel.port2]);
+                    }
+                } else {
+                    swStatusEl.textContent = '❌ Not registered';
+                    cacheVersionEl.textContent = 'N/A';
+                }
+            } else {
+                swStatusEl.textContent = '❌ Not supported';
+                cacheVersionEl.textContent = 'N/A';
+            }
+        } catch (error) {
+            swStatusEl.textContent = '❌ Error';
+            cacheVersionEl.textContent = 'Unknown';
+            console.error('Failed to get service worker info:', error);
         }
     }
 
