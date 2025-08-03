@@ -2,12 +2,13 @@
   "name": "DDC4000 Browser",
   "short_name": "DDC4000",
   "description": "Professional DDC4000 building automation interface browser with screenshot capabilities",
-  "start_url": "/index.html",
+  "start_url": "/",
   "display": "standalone",
   "background_color": "#2c3e50",
   "theme_color": "#3498db",
   "orientation": "any",
   "scope": "/",
+  "id": "ddc4000-browser",
   "categories": ["utilities", "productivity", "business"],
   "lang": "en",
   "icons": [
@@ -46,13 +47,13 @@
       "name": "Take Screenshot",
       "short_name": "Screenshot",
       "description": "Capture current DDC interface",
-      "url": "/index.html?action=screenshot"
+      "url": "/?action=screenshot"
     },
     {
       "name": "Screenshot Gallery",
       "short_name": "Gallery", 
       "description": "View screenshot history",
-      "url": "/index.html?action=gallery"
+      "url": "/?action=gallery"
     }
   ]
 }

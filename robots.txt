@@ -3,3 +3,5 @@ Allow: /
 
 # DDC4000 Browser - Professional building automation interface
 # This is a utility application for DDC4000 system management
+
+Sitemap: https://rappo.dev/sitemap.xml

@@ -1,4 +1,4 @@
-const CACHE_NAME = 'ddc4000-browser-v1.1.0';
+const CACHE_NAME = 'ddc4000-browser-v1.2.0-release';
 const STATIC_CACHE_URLS = [
   '/',
   '/index.html',
@@ -12,7 +12,9 @@ const STATIC_CACHE_URLS = [
   '/icon-192.png',
   '/icon-512.png',
   '/favicon.ico',
-  '/apple-touch-icon.png'
+  '/apple-touch-icon.png',
+  '/sitemap.xml',
+  '/robots.txt'
 ];
 
 // Install event - cache static resources
