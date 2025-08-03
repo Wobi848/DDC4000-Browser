@@ -192,6 +192,9 @@ class DDCBrowser {
         // Load saved config state
         this.loadConfigState();
         
+        // Handle mobile-specific initialization
+        this.initializeMobileOptimizations();
+        
         // Check for URL params first (takes priority over autoload)
         const params = new URLSearchParams(window.location.search);
         if (params.get('ip')) {
@@ -204,6 +207,58 @@ class DDCBrowser {
             setTimeout(() => {
                 this.presetManager.checkAndLoadAutoPreset();
             }, 500);
+        }
+    }
+
+    initializeMobileOptimizations() {
+        // Auto-collapse settings in portrait mode on mobile
+        const checkMobilePortrait = () => {
+            const isMobile = window.innerWidth <= 768;
+            const isPortrait = window.innerHeight > window.innerWidth;
+            
+            if (isMobile && isPortrait && !this.configCollapsed) {
+                // Auto-collapse in portrait mode for better iframe visibility
+                console.log('Auto-collapsing settings for mobile portrait mode');
+                this.toggleConfig();
+            }
+        };
+        
+        // Check on load
+        setTimeout(checkMobilePortrait, 100);
+        
+        // Check on orientation change
+        window.addEventListener('orientationchange', () => {
+            console.log('Orientation change detected');
+            setTimeout(() => {
+                console.log(`After orientation change: ${window.innerWidth}x${window.innerHeight}`);
+                checkMobilePortrait();
+                // Force autofit after orientation change
+                if (window.innerWidth <= 768) {
+                    console.log('Triggering autofit after orientation change (mobile width)');
+                    this.zoomManager.updateFrameSize();
+                    setTimeout(() => this.zoomManager.autoFit(), 100);
+                } else {
+                    console.log('Triggering autofit after orientation change (landscape width)');
+                    this.zoomManager.updateFrameSize();
+                    setTimeout(() => this.zoomManager.autoFit(), 100);
+                }
+            }, 500);
+        });
+        
+        // Check on window resize
+        window.addEventListener('resize', () => {
+            setTimeout(() => {
+                checkMobilePortrait();
+                // Force autofit after resize if mobile
+                if (window.innerWidth <= 768) {
+                    this.zoomManager.autoFit();
+                }
+            }, 200);
+        });
+        
+        // Add mobile-specific touch improvements
+        if ('ontouchstart' in window) {
+            document.body.classList.add('touch-device');
         }
     }
 
@@ -364,7 +419,17 @@ class DDCBrowser {
         
         // Update frame size and auto-fit the interface to screen size
         this.zoomManager.updateFrameSize();
-        setTimeout(() => this.zoomManager.autoFit(), 500);
+        
+        // On mobile, ensure autofit happens and frame size is updated
+        const isMobile = window.innerWidth <= 768;
+        if (isMobile) {
+            setTimeout(() => {
+                this.zoomManager.autoFit();
+                setTimeout(() => this.zoomManager.updateFrameSize(), 100);
+            }, 500);
+        } else {
+            setTimeout(() => this.zoomManager.autoFit(), 500);
+        }
         
     }
 

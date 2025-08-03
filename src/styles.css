@@ -885,11 +885,53 @@ body {
     
     /* Mobile-specific iframe handling */
     .iframe-container {
-        padding: 5px;
+        padding: 2px;
+        height: calc(100vh - 140px); /* Simple calculation: full viewport minus header/status */
+        min-height: 400px;
+        width: 100%;
+    }
+    
+    /* Adjust for collapsed header */
+    .header.collapsed + .content .iframe-container {
+        height: calc(100vh - 80px); /* Even more space when collapsed */
     }
     
     .website-frame {
-        box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+        width: 100% !important;
+        height: 100% !important;
+        max-width: none !important;
+        max-height: none !important;
+        min-width: 100% !important;
+        min-height: 100% !important;
+        display: block !important;
+        box-shadow: none;
+        border: none;
+        margin: 0 !important;
+        padding: 0 !important;
+        /* Force full width on mobile */
+        box-sizing: border-box !important;
+    }
+    
+    /* Better mobile status bar handling */
+    .status-bar {
+        --mobile-status-height: 80px;
+        min-height: 70px; /* Ensure enough space for stacked controls */
+        padding: 8px 10px;
+    }
+    
+    /* Dynamic header height variables */
+    .header {
+        --mobile-header-height: 200px; /* Default when settings are open */
+    }
+    
+    .header.collapsed {
+        --mobile-header-collapsed-height: 60px;
+    }
+    
+    /* Force settings to collapse on very small screens in portrait */
+    .config-section {
+        max-height: 40vh; /* Limit settings to 40% of viewport height */
+        overflow-y: auto;
     }
     
     /* Touch-friendly version modal */
@@ -942,6 +984,54 @@ body {
     }
 }
 
+/* Portrait mode optimization */
+@media (max-width: 768px) and (orientation: portrait) {
+    /* Start with settings collapsed in portrait mode */
+    .config-section {
+        max-height: 0;
+        padding: 0 15px;
+        margin-top: 0;
+        opacity: 0;
+        overflow: hidden;
+        transition: all 0.3s ease;
+    }
+    
+    .header {
+        padding-bottom: 5px;
+        --mobile-header-height: 60px; /* Collapsed by default in portrait */
+    }
+    
+    .toggle-config-btn {
+        background-color: #27ae60; /* Show it's collapsed */
+    }
+    
+    .toggle-config-btn::after {
+        content: " ▼";
+        font-size: 12px;
+    }
+    
+    /* When manually opened */
+    .config-section:not(.collapsed) {
+        max-height: 35vh;
+        padding: 10px 15px;
+        margin-top: 10px;
+        opacity: 1;
+        overflow-y: auto;
+    }
+    
+    /* Ensure iframe gets most of the space in portrait */
+    .iframe-container {
+        height: calc(100vh - 120px); /* Minimal header + status bar */
+        min-height: 400px;
+    }
+    
+    /* When settings are open, reduce iframe space */
+    .header:not(.collapsed) + .content .iframe-container {
+        height: calc(100vh - 35vh - 120px); /* Account for open settings */
+        min-height: 250px;
+    }
+}
+
 /* Extra small phones (portrait) */
 @media (max-width: 480px) {
     .header h1 {
@@ -971,6 +1061,7 @@ body {
     .status-bar {
         padding: 6px 10px;
         font-size: 11px;
+        min-height: 60px;
     }
     
     .zoom-btn,
@@ -984,4 +1075,58 @@ body {
         font-size: 10px;
         min-width: 35px;
     }
+    
+    /* Even more compact in portrait on small phones */
+    .iframe-container {
+        height: calc(100vh - 100px);
+        min-height: 350px;
+        padding: 2px;
+    }
+}
+
+/* Landscape mode optimization */
+@media (max-width: 768px) and (orientation: landscape) {
+    /* In landscape, maximize interface space */
+    .config-section {
+        max-height: 20vh; /* Compact settings in landscape */
+    }
+    
+    .iframe-container {
+        height: calc(100vh - 95px) !important; /* Use more available height */
+        min-height: 280px;
+        max-height: calc(100vh - 85px); /* Prevent overflow but allow more space */
+    }
+    
+    .status-bar {
+        min-height: 42px !important; /* Compact status bar */
+        padding: 5px 8px !important;
+    }
+    
+    .header.collapsed + .content .iframe-container {
+        height: calc(100vh - 65px) !important; /* Maximum space when collapsed */
+        max-height: calc(100vh - 55px);
+    }
+}
+
+/* Touch device improvements */
+.touch-device button {
+    min-height: 44px; /* Apple's recommended minimum touch target */
+    min-width: 44px;
+}
+
+.touch-device .zoom-btn,
+.touch-device .capture-btn {
+    min-height: 44px;
+    min-width: 44px;
+}
+
+.touch-device input,
+.touch-device select {
+    min-height: 44px;
+}
+
+/* Prevent zoom on input focus on iOS */
+.touch-device input[type="text"],
+.touch-device select {
+    font-size: 16px !important;
 }
