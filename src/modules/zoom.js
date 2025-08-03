@@ -28,7 +28,7 @@ export class ZoomManager {
     updateFrameSize() {
         // Set iframe dimensions and scroll position
         const resolution = this.ddcBrowser.resolutionSelect.value;
-        const baseWidth = resolution === 'QVGA' ? 750 : 800;  // QVGA: 320 + 85 shift = 405px total needed
+        const baseWidth = resolution === 'QVGA' ? 720 : 800;  // QVGA: 320 + 85 shift = 405px total needed
         const baseHeight = resolution === 'QVGA' ? 480 : 480;
         
         this.ddcBrowser.websiteFrame.style.width = `${baseWidth}px`;
@@ -64,7 +64,7 @@ export class ZoomManager {
     autoFit() {
         // Calculate the best fit for the current screen
         const resolution = this.ddcBrowser.resolutionSelect.value;
-        const baseWidth = resolution === 'QVGA' ? 750 : 800;  // Use same dimensions as updateFrameSize
+        const baseWidth = resolution === 'QVGA' ? 720 : 800;  // Use same dimensions as updateFrameSize
         const baseHeight = resolution === 'QVGA' ? 480 : 480;
         
         const container = this.ddcBrowser.iframeContainer;
