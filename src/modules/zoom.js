@@ -247,6 +247,144 @@ export class ZoomManager {
             }
         };
         document.addEventListener('keydown', this.fullscreenEscHandler);
+        
+        // Add mobile-friendly exit options
+        this.addMobileFullscreenExit();
+    }
+
+    addMobileFullscreenExit() {
+        // Use the same mobile detection logic as other methods
+        const isMobile = Math.min(window.innerWidth, window.innerHeight) <= 768;
+        if (!isMobile) return;
+        
+        // Create mobile fullscreen exit overlay - positioned at bottom to avoid content
+        this.mobileExitOverlay = document.createElement('div');
+        this.mobileExitOverlay.style.cssText = `
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 10000;
+            background: rgba(0,0,0,0.9);
+            color: white;
+            padding: 12px 20px;
+            border-radius: 25px;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            backdrop-filter: blur(6px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.6);
+            border: 2px solid rgba(255,255,255,0.3);
+            min-height: 44px;
+            touch-action: manipulation;
+            pointer-events: auto;
+            visibility: visible;
+            opacity: 1;
+        `;
+        
+        // Create separate close button with better touch target
+        const closeButton = document.createElement('button');
+        closeButton.style.cssText = `
+            background: #e74c3c;
+            color: white;
+            border: none;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 32px;
+            min-height: 32px;
+            touch-action: manipulation;
+            transition: background-color 0.2s ease;
+        `;
+        closeButton.innerHTML = '×';
+        closeButton.setAttribute('aria-label', 'Exit fullscreen');
+        
+        // Create text span
+        const textSpan = document.createElement('span');
+        textSpan.textContent = '📱 Tap to exit fullscreen';
+        textSpan.style.userSelect = 'none';
+        
+        this.mobileExitOverlay.appendChild(textSpan);
+        this.mobileExitOverlay.appendChild(closeButton);
+        
+        // Add click handlers
+        const exitHandler = (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            this.exitFullscreen();
+        };
+        
+        // Both the overlay and close button should exit fullscreen
+        this.mobileExitOverlay.addEventListener('click', exitHandler);
+        this.mobileExitOverlay.addEventListener('touchend', exitHandler);
+        
+        // Add to document body instead of container to ensure it's always visible
+        document.body.appendChild(this.mobileExitOverlay);
+        
+        console.log('Mobile fullscreen exit overlay created and added to body');
+        
+        // Create a simple always-visible floating exit button as backup
+        this.mobileExitButton = document.createElement('button');
+        this.mobileExitButton.style.cssText = `
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 10001;
+            background: #e74c3c;
+            color: white;
+            border: none;
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+            touch-action: manipulation;
+            opacity: 0.8;
+        `;
+        this.mobileExitButton.innerHTML = '×';
+        this.mobileExitButton.setAttribute('aria-label', 'Exit fullscreen');
+        this.mobileExitButton.addEventListener('click', exitHandler);
+        this.mobileExitButton.addEventListener('touchend', exitHandler);
+        
+        document.body.appendChild(this.mobileExitButton);
+        
+        // Auto-fade main overlay after 4 seconds, but keep it more visible
+        this.hideMobileExitTimer = setTimeout(() => {
+            if (this.mobileExitOverlay) {
+                this.mobileExitOverlay.style.opacity = '0.6';
+            }
+        }, 4000);
+        
+        // Show on any touch in the container area
+        this.fullscreenTapHandler = (e) => {
+            // Don't interfere with DDC interface interactions
+            if (e.target.closest('iframe')) return;
+            
+            if (this.mobileExitOverlay) {
+                this.mobileExitOverlay.style.opacity = '1';
+                clearTimeout(this.hideMobileExitTimer);
+                this.hideMobileExitTimer = setTimeout(() => {
+                    if (this.mobileExitOverlay) {
+                        this.mobileExitOverlay.style.opacity = '0.6';
+                    }
+                }, 4000);
+            }
+        };
+        
+        // Listen for touches on the container but don't interfere with iframe
+        this.ddcBrowser.iframeContainer.addEventListener('touchstart', this.fullscreenTapHandler, { passive: true });
     }
 
     exitFullscreen() {
@@ -258,6 +396,24 @@ export class ZoomManager {
         // Remove ESC handler
         if (this.fullscreenEscHandler) {
             document.removeEventListener('keydown', this.fullscreenEscHandler);
+        }
+        
+        // Clean up mobile exit overlay and button
+        if (this.mobileExitOverlay) {
+            this.mobileExitOverlay.remove();
+            this.mobileExitOverlay = null;
+        }
+        if (this.mobileExitButton) {
+            this.mobileExitButton.remove();
+            this.mobileExitButton = null;
+        }
+        if (this.hideMobileExitTimer) {
+            clearTimeout(this.hideMobileExitTimer);
+            this.hideMobileExitTimer = null;
+        }
+        if (this.fullscreenTapHandler) {
+            this.ddcBrowser.iframeContainer.removeEventListener('touchstart', this.fullscreenTapHandler, { passive: true });
+            this.fullscreenTapHandler = null;
         }
         
         // Reset zoom to fit normal container

@@ -83,6 +83,11 @@ class DDCBrowser {
         this.versionBadge = document.getElementById('versionBadge');
         this.versionModal = document.getElementById('versionModal');
         this.closeVersionModal = document.getElementById('closeVersionModal');
+        
+        // Help elements
+        this.helpBtn = document.getElementById('helpBtn');
+        this.helpModal = document.getElementById('helpModal');
+        this.closeHelpModal = document.getElementById('closeHelpModal');
     }
 
     initializeManagers() {
@@ -147,6 +152,15 @@ class DDCBrowser {
         this.versionModal.addEventListener('click', (e) => {
             if (e.target === this.versionModal) {
                 this.hideVersionModal();
+            }
+        });
+        
+        // Help modal controls
+        this.helpBtn.addEventListener('click', () => this.showHelpModal());
+        this.closeHelpModal.addEventListener('click', () => this.hideHelpModal());
+        this.helpModal.addEventListener('click', (e) => {
+            if (e.target === this.helpModal) {
+                this.hideHelpModal();
             }
         });
         
@@ -834,11 +848,18 @@ class DDCBrowser {
                     } else if (!this.imageInspector.classList.contains('hidden')) {
                         e.preventDefault();
                         this.galleryManager.closeInspector();
+                    } else if (!this.helpModal.classList.contains('hidden')) {
+                        e.preventDefault();
+                        this.hideHelpModal();
                     }
                     break;
                 case 'f':
                     e.preventDefault();
                     this.zoomManager.autoFit();
+                    break;
+                case '?':
+                    e.preventDefault();
+                    this.showHelpModal();
                     break;
             }
         }
@@ -859,6 +880,16 @@ class DDCBrowser {
     hideVersionModal() {
         this.versionModal.classList.add('hidden');
         this.versionModal.style.display = 'none';
+    }
+    
+    showHelpModal() {
+        this.helpModal.classList.remove('hidden');
+        this.helpModal.style.display = 'flex';
+    }
+    
+    hideHelpModal() {
+        this.helpModal.classList.add('hidden');
+        this.helpModal.style.display = 'none';
     }
     
     async updateServiceWorkerInfo() {

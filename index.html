@@ -120,17 +120,18 @@
                 
                 <div class="controls-section">
                     <div class="zoom-controls">
-                        <button id="zoomOutBtn" class="zoom-btn" title="Zoom Out">−</button>
+                        <button id="zoomOutBtn" class="zoom-btn" title="Zoom Out (Ctrl+-)">−</button>
                         <span id="zoomLevel" class="zoom-level">100%</span>
-                        <button id="zoomInBtn" class="zoom-btn" title="Zoom In">+</button>
-                        <button id="autoFitBtn" class="zoom-btn" title="Auto Fit">⏏</button>
-                        <button id="fullscreenBtn" class="zoom-btn" title="Fullscreen">⛶</button>
-                        <button id="resetZoomBtn" class="zoom-btn" title="Reset Zoom">⌂</button>
+                        <button id="zoomInBtn" class="zoom-btn" title="Zoom In (Ctrl++)">+</button>
+                        <button id="autoFitBtn" class="zoom-btn" title="Auto Fit (F key)">⏏</button>
+                        <button id="fullscreenBtn" class="zoom-btn" title="Fullscreen (F11)">⛶</button>
+                        <button id="resetZoomBtn" class="zoom-btn" title="Reset Zoom (Ctrl+0)">⌂</button>
                     </div>
                     
                     <div class="capture-controls">
-                        <button id="captureBtn" class="capture-btn" title="Take Screenshot">📷</button>
-                        <button id="galleryBtn" class="capture-btn" title="Screenshot Gallery">🖼️</button>
+                        <button id="captureBtn" class="capture-btn" title="Take Screenshot (Ctrl+S)">📷</button>
+                        <button id="galleryBtn" class="capture-btn" title="Screenshot Gallery (Ctrl+G)">🖼️</button>
+                        <button id="helpBtn" class="capture-btn" title="Keyboard Shortcuts (?)">❓</button>
                     </div>
                 </div>
             </div>
@@ -250,6 +251,93 @@
                     <div class="version-footer">
                         <p><strong>Built for building automation professionals</strong></p>
                         <p>Created by <strong>Rappo</strong> | Open Source</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Keyboard Shortcuts Help Modal -->
+    <div id="helpModal" class="modal hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>⌨️ Keyboard Shortcuts</h2>
+                <div class="modal-actions">
+                    <button id="closeHelpModal" class="btn-close">×</button>
+                </div>
+            </div>
+            <div class="modal-body">
+                <div class="shortcuts-info">
+                    <div class="shortcuts-section">
+                        <h3>🔍 Zoom & View Controls</h3>
+                        <div class="shortcut-grid">
+                            <div class="shortcut-item">
+                                <kbd>Ctrl</kbd> + <kbd>+</kbd>
+                                <span>Zoom In</span>
+                            </div>
+                            <div class="shortcut-item">
+                                <kbd>Ctrl</kbd> + <kbd>-</kbd>
+                                <span>Zoom Out</span>
+                            </div>
+                            <div class="shortcut-item">
+                                <kbd>Ctrl</kbd> + <kbd>0</kbd>
+                                <span>Reset Zoom</span>
+                            </div>
+                            <div class="shortcut-item">
+                                <kbd>F</kbd>
+                                <span>Auto Fit</span>
+                            </div>
+                            <div class="shortcut-item">
+                                <kbd>F11</kbd>
+                                <span>Toggle Fullscreen</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="shortcuts-section">
+                        <h3>📷 Screenshot Controls</h3>
+                        <div class="shortcut-grid">
+                            <div class="shortcut-item">
+                                <kbd>Ctrl</kbd> + <kbd>S</kbd>
+                                <span>Take Screenshot</span>
+                            </div>
+                            <div class="shortcut-item">
+                                <kbd>Ctrl</kbd> + <kbd>G</kbd>
+                                <span>Open Gallery</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="shortcuts-section">
+                        <h3>🔧 General Controls</h3>
+                        <div class="shortcut-grid">
+                            <div class="shortcut-item">
+                                <kbd>Ctrl</kbd> + <kbd>R</kbd>
+                                <span>Refresh Interface</span>
+                            </div>
+                            <div class="shortcut-item">
+                                <kbd>Escape</kbd>
+                                <span>Exit Fullscreen/Close Modals</span>
+                            </div>
+                            <div class="shortcut-item">
+                                <kbd>?</kbd>
+                                <span>Show This Help</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="shortcuts-section mobile-shortcuts">
+                        <h3>📱 Mobile Gestures</h3>
+                        <div class="shortcut-grid">
+                            <div class="shortcut-item">
+                                <span class="gesture">Double Tap</span>
+                                <span>Auto Fit Interface</span>
+                            </div>
+                            <div class="shortcut-item">
+                                <span class="gesture">Pinch</span>
+                                <span>Zoom In/Out</span>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>

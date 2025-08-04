@@ -793,6 +793,75 @@ body {
     margin: 4px 0;
 }
 
+/* Keyboard Shortcuts Help Modal */
+.shortcuts-info {
+    max-width: 700px;
+}
+
+.shortcuts-section {
+    margin-bottom: 25px;
+}
+
+.shortcuts-section h3 {
+    color: #2c3e50;
+    margin-bottom: 15px;
+    font-size: 16px;
+    border-bottom: 2px solid #ecf0f1;
+    padding-bottom: 8px;
+}
+
+.shortcut-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 12px;
+}
+
+.shortcut-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px;
+    background: #f8f9fa;
+    border-radius: 6px;
+    border-left: 3px solid #3498db;
+}
+
+.shortcut-item kbd {
+    background: #34495e;
+    color: white;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: bold;
+    margin: 0 2px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    display: inline-block;
+    min-width: 24px;
+    text-align: center;
+}
+
+.shortcut-item .gesture {
+    background: #27ae60;
+    color: white;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: bold;
+    display: inline-block;
+}
+
+.shortcut-item span:last-child {
+    font-weight: 500;
+    color: #2c3e50;
+}
+
+.mobile-shortcuts {
+    background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+    padding: 15px;
+    border-radius: 8px;
+    border: 1px solid #dee2e6;
+}
+
 @media (max-width: 768px) {
     .header {
         padding: 8px 12px;
