@@ -88,7 +88,7 @@ export class ZoomManager {
         const isMobile = Math.min(window.innerWidth, window.innerHeight) <= 768;
         
         if (isMobile) {
-            // Mobile: Use full width but calculate proper height based on DDC aspect ratio
+            // Mobile: Smart adaptive sizing for all devices and orientations
             const container = this.ddcBrowser.iframeContainer;
             const containerWidth = container.clientWidth;
             const containerHeight = container.clientHeight;
@@ -97,38 +97,73 @@ export class ZoomManager {
             const ddcWidth = resolution === 'QVGA' ? 320 : 800;
             const ddcHeight = resolution === 'QVGA' ? 240 : 480;
             const ddcAspectRatio = ddcHeight / ddcWidth; // height/width ratio
+            const containerAspectRatio = containerHeight / containerWidth;
             
-            // Calculate iframe dimensions based on orientation
+            // Calculate both dimension options
+            const heightBasedWidth = containerHeight / ddcAspectRatio;
+            const widthBasedHeight = containerWidth * ddcAspectRatio;
+            
+            // Determine optimal sizing strategy
             const isPortrait = containerHeight > containerWidth;
-            let iframeWidth, iframeHeight;
+            const isVeryTallContainer = containerAspectRatio > 1.5;
+            const isVeryWideContainer = containerAspectRatio < 0.6;
             
-            if (isPortrait) {
-                // Portrait: use full width, calculate height from aspect ratio
-                iframeWidth = containerWidth;
-                iframeHeight = Math.min(iframeWidth * ddcAspectRatio, containerHeight);
-            } else {
-                // Landscape: prioritize using full height to maximize interface size
-                const heightBasedWidth = containerHeight / ddcAspectRatio;
-                const widthBasedHeight = containerWidth * ddcAspectRatio;
-                
-                console.log(`Landscape options: height-based width=${Math.round(heightBasedWidth)}, width-based height=${Math.round(widthBasedHeight)}`);
-                
-                if (heightBasedWidth <= containerWidth) {
-                    // Can use full height - this gives us the larger interface
-                    iframeHeight = containerHeight;
-                    iframeWidth = heightBasedWidth;
-                    console.log(`Using full height: ${Math.round(iframeWidth)}x${Math.round(iframeHeight)}`);
-                } else {
-                    // Must constrain by width
-                    iframeWidth = containerWidth;
-                    iframeHeight = widthBasedHeight;
-                    console.log(`Constrained by width: ${Math.round(iframeWidth)}x${Math.round(iframeHeight)}`);
-                }
-            }
+            let iframeWidth, iframeHeight, strategy;
             
             console.log(`Mobile container: ${containerWidth}x${containerHeight} (${isPortrait ? 'portrait' : 'landscape'})`);
             console.log(`DDC content: ${ddcWidth}x${ddcHeight} (ratio: ${ddcAspectRatio.toFixed(3)})`);
-            console.log(`Iframe size: ${Math.round(iframeWidth)}x${Math.round(iframeHeight)}`);
+            console.log(`Container aspect: ${containerAspectRatio.toFixed(3)}, DDC aspect: ${ddcAspectRatio.toFixed(3)}`);
+            console.log(`Height-based width: ${Math.round(heightBasedWidth)}, Width-based height: ${Math.round(widthBasedHeight)}`);
+            
+            if (isPortrait) {
+                // Portrait mode: prioritize width usage
+                if (widthBasedHeight <= containerHeight) {
+                    // DDC fits in height when using full width
+                    iframeWidth = containerWidth;
+                    iframeHeight = widthBasedHeight;
+                    strategy = 'portrait-width-based';
+                } else {
+                    // DDC too tall, constrain by height
+                    iframeHeight = containerHeight;
+                    iframeWidth = heightBasedWidth;
+                    strategy = 'portrait-height-constrained';
+                }
+            } else {
+                // Landscape mode: optimize based on resolution and container shape
+                if (resolution === 'QVGA') {
+                    // QVGA (320x240) is tall - prefer width-based in landscape
+                    if (widthBasedHeight <= containerHeight) {
+                        iframeWidth = containerWidth;
+                        iframeHeight = widthBasedHeight;
+                        strategy = 'landscape-qvga-width-based';
+                    } else {
+                        // Constrain by height if width-based doesn't fit
+                        iframeHeight = containerHeight;
+                        iframeWidth = heightBasedWidth;
+                        strategy = 'landscape-qvga-height-constrained';
+                    }
+                } else {
+                    // WVGA (800x480) is wide - choose based on container shape
+                    if (isVeryWideContainer && widthBasedHeight <= containerHeight) {
+                        // Very wide container: use width-based for WVGA
+                        iframeWidth = containerWidth;
+                        iframeHeight = widthBasedHeight;
+                        strategy = 'landscape-wvga-width-based-wide';
+                    } else if (heightBasedWidth <= containerWidth) {
+                        // Normal landscape: use height-based for WVGA
+                        iframeHeight = containerHeight;
+                        iframeWidth = heightBasedWidth;
+                        strategy = 'landscape-wvga-height-based';
+                    } else {
+                        // Fallback: constrain by width
+                        iframeWidth = containerWidth;
+                        iframeHeight = widthBasedHeight;
+                        strategy = 'landscape-wvga-width-constrained';
+                    }
+                }
+            }
+            
+            console.log(`Strategy: ${strategy} → ${Math.round(iframeWidth)}x${Math.round(iframeHeight)}`);
             
             // Set iframe dimensions
             this.ddcBrowser.websiteFrame.style.width = `${iframeWidth}px`;
@@ -195,17 +230,22 @@ export class ZoomManager {
         console.log(`AutoFit called: ${window.innerWidth}x${window.innerHeight}, isMobile: ${isMobile}`);
         
         if (isMobile) {
-            // Mobile: Set zoom to 1.0 to use the base scale calculated in updateFrameSize
+            // Mobile: Recalculate frame size then set zoom to 1.0
+            this.updateFrameSize();
             this.setZoom(1.0);
             
-            // Show the base scale info
+            // Show comprehensive auto-fit info
             const ddcWidth = resolution === 'QVGA' ? 320 : 800;
+            const ddcHeight = resolution === 'QVGA' ? 240 : 480;
             const baseScale = this.mobileBaseScale || 1.0;
             const orientation = window.innerHeight > window.innerWidth ? 'portrait' : 'landscape';
+            const container = this.ddcBrowser.iframeContainer;
+            const efficiency = Math.round((baseScale * ddcWidth * ddcHeight) / (container.clientWidth * container.clientHeight) * 100);
             
-            this.ddcBrowser.showSuccess(`Mobile auto-fit (${orientation}): ${Math.round(baseScale * 100)}%`);
+            console.log(`Mobile auto-fit: ${Math.round(baseScale * 100)}% scale, ${efficiency}% space efficiency`);
+            this.ddcBrowser.showSuccess(`${resolution} auto-fit (${orientation}): ${Math.round(baseScale * 100)}% scale`);
         } else {
-            // Desktop: Use original logic
+            // Desktop: Enhanced auto-fit with better scaling limits
             const baseWidth = resolution === 'QVGA' ? 720 : 800;
             const baseHeight = resolution === 'QVGA' ? 480 : 480;
             
@@ -216,10 +256,21 @@ export class ZoomManager {
             
             const scaleX = containerWidth / baseWidth;
             const scaleY = containerHeight / baseHeight;
-            const optimalScale = Math.min(scaleX, scaleY, 3.0);
+            
+            // Smart scaling limits based on resolution and container size
+            let maxScale = 3.0;
+            if (resolution === 'QVGA' && Math.min(containerWidth, containerHeight) < 400) {
+                maxScale = 2.0; // Limit QVGA scaling on smaller desktop windows
+            } else if (resolution === 'WVGA' && containerWidth > 1200) {
+                maxScale = 2.5; // Limit WVGA scaling on very wide monitors
+            }
+            
+            const optimalScale = Math.max(0.25, Math.min(scaleX, scaleY, maxScale));
+            
+            console.log(`Desktop auto-fit: container ${containerWidth}x${containerHeight}, scales ${scaleX.toFixed(2)}x${scaleY.toFixed(2)}, optimal ${optimalScale.toFixed(2)}`);
             
             this.setZoom(optimalScale);
-            this.ddcBrowser.showSuccess(`Auto-fit applied: ${Math.round(optimalScale * 100)}%`);
+            this.ddcBrowser.showSuccess(`${resolution} auto-fit: ${Math.round(optimalScale * 100)}% scale`);
         }
     }
 

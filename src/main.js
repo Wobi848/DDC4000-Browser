@@ -17,6 +17,7 @@ class DDCBrowser {
         this.loadStartTime = null;
         this.deferredPrompt = null;
         this.configCollapsed = false;
+        this.previousProtocol = null;
         
         this.init();
     }
@@ -112,6 +113,9 @@ class DDCBrowser {
             }
         });
         
+        // Protocol change handler with reload prompt
+        this.protocolSelect.addEventListener('change', () => this.handleProtocolChange());
+        
         // Zoom controls
         this.zoomInBtn.addEventListener('click', () => this.zoomManager.zoomIn());
         this.zoomOutBtn.addEventListener('click', () => this.zoomManager.zoomOut());
@@ -205,6 +209,9 @@ class DDCBrowser {
         
         // Load saved config state
         this.loadConfigState();
+        
+        // Initialize protocol tracking
+        this.previousProtocol = this.protocolSelect.value;
         
         // Handle mobile-specific initialization
         this.initializeMobileOptimizations();
@@ -401,6 +408,140 @@ class DDCBrowser {
         } else {
             this.loadWebsite();
         }
+    }
+
+    handleProtocolChange() {
+        const newProtocol = this.protocolSelect.value;
+        const oldProtocol = this.previousProtocol;
+        
+        console.log(`Protocol change: ${oldProtocol} → ${newProtocol}`);
+        
+        // Check if there's a currently loaded interface
+        const hasFrameSrc = this.websiteFrame.src && 
+                           this.websiteFrame.src !== '' && 
+                           this.websiteFrame.src !== 'about:blank';
+        
+        const isConnected = this.connectionStatus.classList.contains('connected') || 
+                           this.connectionStatus.classList.contains('connecting');
+        
+        const hasValidIP = this.ipInput.value.trim() !== '';
+        
+        // Show prompt if there's an IP address (user has configured something)
+        const shouldPrompt = hasValidIP && oldProtocol && newProtocol !== oldProtocol;
+        
+        console.log(`Interface check: frameSrc=${!!hasFrameSrc}, connected=${isConnected}, hasIP=${hasValidIP}, shouldPrompt=${shouldPrompt}`);
+        
+        if (!shouldPrompt) {
+            // No configured interface or same protocol, just update tracking
+            console.log(`Protocol changed to ${newProtocol.toUpperCase()} (no reload needed)`);
+            this.previousProtocol = newProtocol;
+            return;
+        }
+        
+        // There's a loaded interface, ask if they want to reload
+        const currentIP = this.ipInput.value.trim();
+        
+        this.showProtocolChangePrompt(oldProtocol.toUpperCase(), newProtocol.toUpperCase(), currentIP);
+    }
+
+    showProtocolChangePrompt(oldProtocol, newProtocol, currentIP) {
+        console.log(`Showing protocol change prompt: ${oldProtocol} → ${newProtocol} for IP ${currentIP}`);
+        
+        const overlay = document.createElement('div');
+        overlay.style.cssText = `
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.8); z-index: 3000;
+            display: flex; align-items: center; justify-content: center;
+        `;
+        
+        const modal = document.createElement('div');
+        modal.style.cssText = `
+            background: white; border-radius: 12px; padding: 30px;
+            max-width: 500px; width: 90%; box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+        `;
+        
+        modal.innerHTML = `
+            <div style="text-align: center; margin-bottom: 25px;">
+                <div style="font-size: 48px; margin-bottom: 15px;">🔄</div>
+                <h2 style="color: #3498db; margin: 0;">Protocol Changed</h2>
+                <p style="color: #7f8c8d; margin: 10px 0;">
+                    ${oldProtocol} → ${newProtocol}
+                </p>
+            </div>
+            
+            <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;">
+                <p style="margin: 0; color: #2c3e50;">
+                    You're currently connected to <strong>${currentIP}</strong> via ${oldProtocol}.<br><br>
+                    Would you like to reload the interface using <strong>${newProtocol}</strong>?
+                </p>
+            </div>
+            
+            <div style="background: #fff3cd; border: 1px solid #ffeaa7; padding: 15px; border-radius: 8px; margin: 20px 0;">
+                <small style="color: #856404;">
+                    💡 <strong>Note:</strong> This will switch the DDC4000 connection from ${oldProtocol} to ${newProtocol}. 
+                    Make sure your DDC4000 device supports the new protocol.
+                </small>
+            </div>
+            
+            <div style="text-align: center; margin-top: 25px; display: flex; gap: 15px; justify-content: center;">
+                <button id="cancelProtocolChange" style="
+                    background: #6c757d; color: white; border: none; 
+                    padding: 12px 20px; border-radius: 6px; cursor: pointer;
+                    font-size: 14px; min-width: 100px;
+                ">Cancel</button>
+                
+                <button id="confirmProtocolChange" style="
+                    background: #28a745; color: white; border: none; 
+                    padding: 12px 20px; border-radius: 6px; cursor: pointer;
+                    font-size: 14px; min-width: 100px;
+                ">Reload with ${newProtocol}</button>
+            </div>
+        `;
+        
+        overlay.appendChild(modal);
+        document.body.appendChild(overlay);
+        
+        console.log('Protocol change modal added to DOM');
+        
+        // Handle Escape key (define first)
+        const escapeHandler = (e) => {
+            if (e.key === 'Escape') {
+                // Revert protocol selection
+                this.protocolSelect.value = this.previousProtocol;
+                document.body.removeChild(overlay);
+                document.removeEventListener('keydown', escapeHandler);
+            }
+        };
+        document.addEventListener('keydown', escapeHandler);
+        
+        // Event listeners
+        modal.querySelector('#cancelProtocolChange').addEventListener('click', () => {
+            console.log('Protocol change cancelled, reverting to:', this.previousProtocol);
+            // Revert protocol selection
+            this.protocolSelect.value = this.previousProtocol;
+            document.body.removeChild(overlay);
+            document.removeEventListener('keydown', escapeHandler);
+        });
+        
+        modal.querySelector('#confirmProtocolChange').addEventListener('click', () => {
+            console.log('Protocol change confirmed, reloading with:', this.protocolSelect.value);
+            document.body.removeChild(overlay);
+            document.removeEventListener('keydown', escapeHandler);
+            // Update protocol tracking
+            this.previousProtocol = this.protocolSelect.value;
+            // Reload with new protocol
+            this.loadWebsite();
+        });
+        
+        // Close on overlay click
+        overlay.addEventListener('click', (e) => {
+            if (e.target === overlay) {
+                // Revert protocol selection
+                this.protocolSelect.value = this.previousProtocol;
+                document.body.removeChild(overlay);
+                document.removeEventListener('keydown', escapeHandler);
+            }
+        });
     }
 
     handleLoadSuccess(url) {

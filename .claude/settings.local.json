@@ -13,7 +13,12 @@
       "Bash(rm:*)",
       "Bash(grep:*)",
       "Bash(copy:*)",
-      "Bash(ls:*)"
+      "Bash(ls:*)",
+      "Bash(flutter create:*)",
+      "Bash(flutter pub:*)",
+      "Bash(flutter packages pub run:*)",
+      "Bash(flutter analyze:*)",
+      "Bash(flutter build:*)"
     ],
     "deny": []
   }
