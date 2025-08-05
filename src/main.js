@@ -362,6 +362,21 @@ class DDCBrowser {
         // Add timestamp to prevent caching issues
         const urlWithTimestamp = this.addTimestampToUrl(urlResult.url);
         
+        // DEBUG: Log URL information
+        console.log('🔗 DDC4000 URL DEBUG:');
+        console.log('Original URL:', urlResult.url);
+        console.log('Final URL with timestamp:', urlWithTimestamp);
+        console.log('Protocol:', this.protocolSelect.value);
+        console.log('IP:', this.ipInput.value);
+        console.log('Resolution:', this.resolutionSelect.value);
+        console.log('Proxied:', urlResult.proxied);
+        console.log('Mixed Content:', urlResult.mixedContent);
+        
+        // Show URL in UI for debugging
+        if (this.statusText) {
+            this.statusText.innerHTML = `Connecting to: <code style="background: #f0f0f0; padding: 2px 4px; border-radius: 2px; font-size: 11px;">${urlResult.url}</code>`;
+        }
+        
         // Set iframe attributes to help with DDC4000 compatibility
         this.websiteFrame.setAttribute('sandbox', 'allow-same-origin allow-scripts allow-forms allow-popups allow-top-navigation');
         
